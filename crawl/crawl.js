@@ -72,3 +72,5 @@ var Crawl = (function() {
     retrieve: retrieve
   };
 }());
+
+module.exports = Crawl
