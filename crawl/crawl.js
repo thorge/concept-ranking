@@ -72,7 +72,3 @@ var Crawl = (function() {
     retrieve: retrieve
   };
 }());
-
-Crawl.retrieve('Albert Einstein', function(body) {
-  console.log(body.results.bindings);
-});
