@@ -4,7 +4,7 @@
 
 ## Crawl
 Querying wikidata for a person by name will most likely timeout, because of one minute execution time at sparql endpoint.
-Since wikidata has no indexed data available, but dbpedia has (Virtuoso supports use of several free-text options with bif:contains) it's better to (1) query dbpedia for a person by name (2) fetch dbpedia statement that holds the corresponding person's wikidata concept URI (if available) and then query wikidata for all metadata that we can ingest.
+Since wikidata has no indexed data available, but dbpedia has (Virtuoso supports use of several free-text options with bif:contains) it's better to (1) query dbpedia for a person by name (2) fetch dbpedia statement that holds the corresponding person's wikidata concept URI (if available) and finally (3) query wikidata for all metadata that we can ingest.
 
 Since dbpedia's sparql service doesn't support federated queries and wikidata can't use dbpedias bif:contains predicate, we have to query both services sequentially.
 
