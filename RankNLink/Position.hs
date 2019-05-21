@@ -3,6 +3,8 @@
 module Position where 
 
 import Data.List(sort,sortOn)
+import Data.Maybe(fromJust,isJust)
+import SmallFunctions(medianWithPos)
 {- Every word in the text should be labeled with its position. 
   The difficulty here is that many words , e.g. names, places whatever, should always be looked at as a unit.
   So   the sentence "Max Planck's place of burial is the  Stadtfriedhof Göttingen" should be partitioned like
@@ -44,8 +46,14 @@ type Pos = [Int]
 
 type SinglePos = Int 
 
-type Distance = Int 
+type Distance  = Int 
 
+type Distances = [Distance]
+
+type Name      = String 
+
+type RelatedString     = String
+type RelatedStrings    = [RelatedString]
 
 -- our tree datatype where we will save the words and positions from the text as tupels
 data SearchTree a = Empty | Node (SearchTree a) a (SearchTree a) 
@@ -123,7 +131,13 @@ findString strF stStr stPs
   = let toFind     = onlyWords strF  -- function
         firstWord  = head toFind     
         firstPos   = findWord firstWord stStr 
-    in  undefined       
+        restWords  = tail toFind 
+    in  case firstPos of 
+         Nothing -> []
+         Just ps -> find' restWords ps 1 where 
+          find' [] accPs cnt     = accPs 
+          find' (w:ws) accPs cnt = let wPs = filter (\p -> isJust(findWordAtPos (p+cnt) stPs) && (w == fromJust(findWordAtPos (p+cnt) stPs)) ) accPs  
+                                   in  find' ws wPs (cnt+1)    
 
 
 
@@ -151,23 +165,8 @@ numberTheString str = let ws = words str
                      
 
 
--- some helping functions
--- need to be exported in a seperate module 
--------------------------------------------------------------------------------
 
 
-median :: [a] -> a 
-median [] = error "can not get a median from an empty list"
-median as = let lengthL = length as 
-                med_pos = (lengthL - 1) `div` 2
-            in as !! med_pos 
-
-medianWithPos :: [a] -> (a,Int) 
-medianWithPos  [] = error "can not get a median from an empty list"
-medianWithPos  as = let lengthL = length as 
-                        med_pos = (lengthL - 1) `div` 2
-                        med     = as !! med_pos
-                in  (med,med_pos )
 
 
 -- onlyWords
@@ -213,7 +212,7 @@ distance2 pos1 pos2 = abs (pos1 - pos2)
 -- so this functions gets all distances between every singlePos in the first Position and every singlePos in the second Position
 -- meaning : we find the name "Max Planck" at positions [7,34,117] and the word "Göttingen at ([17,60,278], so all distances between max planck and göttingen would be
 -- [10,53,271,17,26,244,100,57,161]  . Now we could just proceed with the shortest distance or with the average distance or with the amount of distances to influence our ranking later on
-distancePosLists :: Pos -> Pos -> [Distance]
+distancePosLists :: Pos -> Pos -> Distances 
 distancePosLists ps1 ps2 = [distance2] <*> ps1 <*> ps2  
 
 -- returns the shortest distance between the positions of two words
@@ -222,5 +221,19 @@ shortestOfDistances ps1 ps2 = minimum  $ distancePosLists ps1 ps2
 
 
 
--- kinda put all together in one function
--- start point : we got a name 
+
+
+-- computes the distances between the given name and a given string, which may be related to the name
+distancesBetweenWordNName :: Name -> RelatedString -> SearchTree (String,Pos) -> SearchTree (String,SinglePos) -> Distances 
+distancesBetweenWordNName name word strTree posTree = let psWord    = findString word strTree posTree -- positions of the given word
+                                                          psName    = findString name strTree posTree --positions of the given name
+                                                          distances = distancePosLists psName psWord 
+                                                      in distances 
+                                                      
+
+-- the function above gets 1 name and 1 possible relatedword
+-- now we need a function to check 1 name and many possible related words
+-- the result must provide the information which relatedstring  has which distances to the given name 
+
+distancesBetweenWordsNName :: Name -> RelatedStrings -> SearchTree (String,Pos) -> SearchTree (String,SinglePos) -> [(RelatedString,Distances)]
+distancesBetweenWordsNName = undefined 
