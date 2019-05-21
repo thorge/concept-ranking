@@ -12,7 +12,7 @@ var Crawl = (function() {
 
   // query dbpedia for person by name
   function sparql_dbpedia(name, cb) {
-    name = name.replace(' ', ' AND ');
+    name = name.trim().split(' ').join(' AND ');
     var query = [
       'PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>',
       'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
