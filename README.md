@@ -11,16 +11,7 @@ Since dbpedia's sparql service doesn't support federated queries and wikidata ca
 The nodejs Wikidata/DBPedia crawler can be found in *crawl* directory.
 
 ### Prerequisites
-**Debian/Ubuntu**: Please make sure, you have nodejs and npm (node packet manager) installed, if not:
-
-    $ sudo apt install nodejs npm
-
-Then you have to install the node modules from *crawl* directory:
-
-    $ npm install
-
-### Prerequisites
-**Debian/Ubuntu**: Please make sure, you have nodejs and npm (node packet manager) installed, if not:
+**Debian/Ubuntu**: Please make sure, you have nodejs and npm installed, if not:
 
     $ sudo apt install nodejs npm
 
