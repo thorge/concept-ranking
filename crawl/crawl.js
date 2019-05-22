@@ -51,6 +51,7 @@ var Crawl = (function() {
         'PREFIX wdt: <http://www.wikidata.org/prop/direct/>',
         'SELECT * WHERE {',
         '  <' + wdEntity + '> ?p ?o .',
+        '  ?o ?p2 ?o2 .',
         '  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }',
         '}',
         'LIMIT 1000'
