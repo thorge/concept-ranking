@@ -47,19 +47,19 @@ var Crawl = (function() {
       'PREFIX wd: <http://www.wikidata.org/entity/>',
       'PREFIX wdt: <http://www.wikidata.org/prop/direct/>',
     ]
-    var select = 'SELECT DISTINCT ?descriptionLabel ';
+    var select = 'SELECT DISTINCT ?description ';
     var inner = '<' + wdEntity+ '> <http://schema.org/description> ?description .';
-    var label = 'SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". ?description rdfs:label ?descriptionLabel . ';
-    var groupby = 'GROUP BY ?descriptionLabel ';
+    var label = 'SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". ?Pdescription rdfs:label ?description . ';
+    var groupby = 'GROUP BY ?description ';
     config.properties.forEach(function (property, key) {
       if (property.concat === true) {
-        select += '(GROUP_CONCAT(DISTINCT ?' + property.label + 'Label; SEPARATOR=", ") AS ?' + property.label + 'Labels)';
+        select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + 's)';
       } else {
-        select += '?' + property.label + 'Label ';
-        groupby += '?' + property.label + 'Label ';
+        select += '?' + property.label + ' ';
+        groupby += '?' + property.label + ' ';
       }
-      inner += '<' + wdEntity+ '> wdt:' + property.name + ' ?' + property.label + ' .';
-      label += '?' + property.label + ' rdfs:label ?' + property.label + 'Label .';
+      inner += 'OPTIONAL{ <' + wdEntity+ '> wdt:' + property.name + ' ?P' + property.label + ' . } ';
+      label += '?P' + property.label + ' rdfs:label ?' + property.label + ' .';
     });
     label += ' }';
     select += 'WHERE {';
