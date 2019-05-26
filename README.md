@@ -23,9 +23,23 @@ Then you have to install the node modules from *crawl* directory:
 Require the file in your js and retrieve data like this:
     
     const crawl = require('./crawl');
+    
+    // build request
+    const request = {
+      name: 'Max Planck',
+      properties: [
+        { name: 'P1477', label: 'birthname'},
+        { name: 'P20', label: 'placeofdeath'},
+        { name: 'P106', label: 'occupation', concat: true, delimiter: ','},
+        { name: 'P108', label: 'employer', concat: true, delimiter: ','},
+      ]
+    }
 
-    crawl.retrieve('Albert Einstein', function(body) {
-      console.log(body.results.bindings);
+    // fire request
+    crawl.retrieve(request, function(entity, query, body) {
+      console.log(entity);
+      console.log(query);
+      console.log(body);
     });
     
 ### Example

@@ -1,14 +1,27 @@
 const crawl = require('./crawl');
 const fs = require('fs');
 
+// build request
+const request = {
+  name: 'Max Planck',
+  properties: [
+    { name: 'P1477', label: 'birthname'},
+    { name: 'P19', label: 'placeofbirth'},
+    { name: 'P20', label: 'placeofdeath'},
+    { name: 'P106', label: 'occupation', concat: true, delimiter: ','},
+    { name: 'P108', label: 'employer', concat: true, delimiter: ','},
+    { name: 'P463', label: 'memberof', concat: true, delimiter: ','}   
+  ]
+}
 
-crawl.retrieve('Albert Einstein', function(body) {
+// fire request
+crawl.retrieve(request, function(wdEntity, query, body) {
 
-  fs.writeFile("./result_"+ Date.now() +".json", JSON.stringify(body.results.bindings), function(err) {
+  // save possible results to file
+  fs.writeFile("./result_"+ wdEntity +".json", JSON.stringify(body.results.bindings), function(err) {
     if(err) {
         return console.log(err);
     }
-
     console.log("The file was saved!");
   }); 
 
