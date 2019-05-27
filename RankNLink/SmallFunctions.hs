@@ -18,3 +18,9 @@ medianWithPos  as = let lengthL = length as
                 in  (med,med_pos )
 
 -----------------------------------------------------------------
+
+average :: [Int] -> Float 
+average list = let (sumL,lengthL)  = foldr (\i (s,l) -> ( (s+i) , (l+1) ) ) (0,0)  mapped 
+                   mapped          = map fromIntegral list
+               in sumL/lengthL
+                   

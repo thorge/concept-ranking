@@ -1,8 +1,8 @@
 module PositionMap where 
 
 import qualified Data.Map as Map
-
-import SmallFunctions(medianWithPos)
+import Data.Maybe(fromJust,isJust)
+import SmallFunctions(average)
 {- Every word in the text should be labeled with its position. 
   The difficulty here is that many words , e.g. names, places whatever, should always be looked at as a unit.
   So   the sentence "Max Planck's place of burial is the  Stadtfriedhof Göttingen" should be partitioned like
@@ -56,6 +56,11 @@ type RelatedStrings    = [RelatedString]
 
 
 
+-- onlyWords
+-- finds all space seperated words and deletes all symbols like ',' or '.' or e.g. the 's' at Max Planck's
+onlyWords :: String -> [String]
+onlyWords = words -- not yet defined 
+
 
 -- number all words in a string
 
@@ -93,11 +98,35 @@ initStrKV str  = let newKV = (Map.empty :: Map.Map  String Pos)
 --takes a single word and looks in the Stringsortedtree if 
 -- the word is in it and returns if found the positions of the given word
 --else returns Nothing
--- findWord :: String -> Map.Map String SinglePos ->  Maybe Pos 
--- findWord  _  Empty = Nothing 
+findWord :: String -> Map.Map String Pos ->  Maybe Pos 
+findWord  str keyM = Map.lookup str keyM 
 
 
 
+-- gets a position and returns the word at its position in the text if its exists
+-- otherwise returns nothing
+-- expects a positive number 
+findWordAtPos :: SinglePos -> Map.Map SinglePos String -> Maybe String 
+findWordAtPos pos keyM = Map.lookup pos keyM
+
+
+
+-- in general we try to find a string in the text, which can be 1,2,3 .. words
+-- so we need to combine our findword functons here
+-- and the output is a positionlist of where to find the input string
+-- empty lsit means the string is not in the text
+findString :: String -> Map.Map String Pos -> Map.Map SinglePos String ->  Pos 
+findString strF stStr stPs 
+  = let toFind     = onlyWords strF  -- function
+        firstWord  = head toFind     
+        firstPos   = findWord firstWord stStr 
+        restWords  = tail toFind 
+    in  case firstPos of 
+         Nothing -> []
+         Just ps -> find' restWords ps 1 where 
+          find' [] accPs cnt     = accPs 
+          find' (w:ws) accPs cnt = let wPs = filter (\p -> isJust(findWordAtPos (p+cnt) stPs) && (w == fromJust(findWordAtPos (p+cnt) stPs)) ) accPs  
+                                   in  find' ws wPs (cnt+1)    
 
 
 
@@ -115,3 +144,15 @@ distance2 pos1 pos2 = abs (pos1 - pos2)
 -- [10,53,271,17,26,244,100,57,161]  . Now we could just proceed with the shortest distance or with the average distance or with the amount of distances to influence our ranking later on
 distancePosLists :: Pos -> Pos -> Distances 
 distancePosLists ps1 ps2 = [distance2] <*> ps1 <*> ps2  
+
+
+
+-- computes the distances between the given name and a given string, which may be related to the name
+distancesBetweenWordNName :: Name -> RelatedString ->  Map.Map String Pos -> Map.Map SinglePos String -> Distances 
+distancesBetweenWordNName name word strTree posTree = let psWord    = findString word strTree posTree -- positions of the given word
+                                                          psName    = findString name strTree posTree --positions of the given name
+                                                          distances = distancePosLists psName psWord 
+                                                      in distances 
+
+distancesBetweenWordsNName :: Name -> RelatedStrings -> Map.Map String Pos -> Map.Map SinglePos String -> [(RelatedString,Distances)]
+distancesBetweenWordsNName name strings stringKM posKM =  foldr (\str acc -> (str,(distancesBetweenWordNName name str stringKM posKM)) : acc ) [] strings
