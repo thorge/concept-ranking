@@ -26,3 +26,9 @@ Now we want to compute probabilities that a certain name is linked with a person
 
  -- We need for every related string the names it could be associated with and the found distances to it 
  -- a suiting data structure would be a keymap of type Map RelatedString [(Name,Pos)]
+
+
+-- this function takes 1 related string and tries to give probabilites to which name the word is most likely related with
+ --compProbsFor1RelString :: RelatedString -> Map.Map RelatedString [(Name,Pos)] -> [(Name,Prob)]
+ --ompProbsFor1RelString relStr keyM = let namesNPos  = 
+--                                         averageSum = 
