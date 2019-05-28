@@ -42,7 +42,7 @@ var Crawl = (function() {
     // build query
     var prefix = 'PREFIX wdt: <http://www.wikidata.org/prop/direct/> ';
     var select = 'SELECT DISTINCT ?label ?description ';
-    var inner = '<' + wdEntity+ '> <http://schema.org/description> ?description . OPTIONAL{';
+    var inner = 'OPTIONAL{ <' + wdEntity+ '> <http://schema.org/description> ?description . ';
     var label = 'SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". ?Pdescription rdfs:label ?description . ';
     var groupby = 'GROUP BY ?label ?description ';
     config.properties.forEach(function (property, key) {
