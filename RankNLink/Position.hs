@@ -78,7 +78,7 @@ treeSize  = foldSearchTree 0 (\n1 t n2 -> n1 + 1 + n2)
 
 
 treeDepth :: SearchTree a -> Int 
-treeDepth =  foldSearchTree 0 (\n1 t n2 -> 1 + (max n1 n2)) 
+treeDepth =  foldSearchTree 0 (\n1 t n2 -> 1 + max n1 n2) 
 -- tree operations
 ----------------------------------------
 
@@ -89,7 +89,7 @@ insertByString :: (String,SinglePos) -> SearchTree (String,Pos) -> SearchTree (S
 insertByString (str,pos) Empty                                          = Node Empty (str,[pos]) Empty 
 insertByString tupel@(strI,posI) (Node t1 (str,ps) t2 )   | strI < str  = Node (insertByString tupel t1) (str,ps)         t2 
                                                           | strI > str  = Node t1                        (str,ps)         (insertByString tupel t2) 
-                                                          | otherwise   = Node t1                        (str,(posI:ps))  t2  
+                                                          | otherwise   = Node t1                        (str,posI:ps)  t2  
  
 -- insert one single position with its string into a st which is sorted by the positions
 -- because there is every position only once we can choose SearchTree (String,SinglePos) as a suiting data type to save the given input later on in our  second tree
@@ -218,6 +218,8 @@ distancePosLists ps1 ps2 = [distance2] <*> ps1 <*> ps2
 -- returns the shortest distance between the positions of two words
 shortestOfDistances :: Pos -> Pos -> Distance 
 shortestOfDistances ps1 ps2 = minimum  $ distancePosLists ps1 ps2
+
+
 
 
 
