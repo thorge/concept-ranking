@@ -17,4 +17,4 @@ planckNPhysicist = distancesBetweenWordNName "Max Planck" "physicist" stringTree
 
 planckNWas = distancesBetweenWordNName "Max Planck" "was" stringTree posTree 
 
-wasNPhysicist = distancesBetweenWordNName "Max Planck" ["physicist","was"] stringTree posTree 
+wasNPhysicist = distancesBetweenWordsNName "Max Planck" ["physicist","was"] stringTree posTree 

@@ -2,7 +2,7 @@ module SmallFunctions where
 
 
 
--- gets the submedian of a generic list
+-- gets the submedian of a generic ordered list
 median :: [a] -> a 
 median [] = error "can not get a median from an empty list"
 median as = let lengthL = length as 
