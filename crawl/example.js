@@ -1,9 +1,11 @@
+/* example of federated query */
+
 const crawl = require('./crawl');
 const fs = require('fs');
 
 // build request
 const request = {
-  name: 'Max Planck',
+  name: 'Christian Albrecht',
   properties: [
     { name: 'P1477', label: 'birthname'},
     { name: 'P19', label: 'placeofbirth'},
@@ -15,10 +17,9 @@ const request = {
 }
 
 // fire request
-crawl.retrieve(request, function(wdEntity, query, body) {
-
+crawl.retrieve(request, function(query, body) {
   // save possible results to file
-  fs.writeFile("./result_"+ wdEntity +".json", JSON.stringify(body.results.bindings), function(err) {
+  fs.writeFile("./result.json", JSON.stringify(body.results.bindings), function(err) {
     if(err) {
         return console.log(err);
     }
