@@ -1,6 +1,6 @@
 /* example of federated query */
 
-const crawl = require('./crawl');
+const crawl = require('../build/crawl');
 const fs = require('fs');
 
 // build request
