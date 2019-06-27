@@ -8,13 +8,13 @@ Querying wikidata for a person by name the common way will most likely timeout, 
 The nodejs Wikidata crawler can be found in *crawl* directory.
 
 ### Prerequisites
-**Debian/Ubuntu**: Please make sure, you have nodejs, npm and grunt installed:
+**Debian/Ubuntu**: Please make sure, you have nodejs and npm installed:
 
-    $ sudo apt install nodejs npm && sudo npm install -g grunt-cli
+    $ sudo apt install nodejs npm
 
-If you want to build or run the application, you have to install the corresponding npm modules from *crawl* directory:
+If you want to build or run the application, you must install grunt and the corresponding npm modules from *crawl* directory:
 
-    $ cd crawl && npm install
+    $ cd crawl && npm install && sudo npm install -g grunt-cli
 
  You may choose to install without the development dependencies by using the *--production* flag:
  
