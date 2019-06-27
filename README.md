@@ -14,7 +14,7 @@ The nodejs Wikidata crawler can be found in *crawl* directory.
 
 If you want to build or run the application, you must install grunt and the corresponding npm modules from *crawl* directory:
 
-    $ cd crawl && npm install && sudo npm install -g grunt-cli
+    $ cd crawl && npm install && sudo npm install -g grunt
 
  You may choose to install without the development dependencies by using the *--production* flag:
  
