@@ -1,45 +1,62 @@
 request = require('request')
 Crawl = do ->
-  #public functions
-  
-  # federated query over dbpedia & wikidata
-  retrieve = (config, cb) ->
-    # join search parameters
-    s = config.name.trim().split(' ').join(' AND ')
+  endpoint = 'https://query.wikidata.org/sparql?query='
+  config = {
+    limit: 1000,
+    lang: 'en'
+  }
+  # Retrieve data from Wikidata
+  # Makes use of Mediawiki API Service for full text search.
+  retrieve = (c, cb) ->
+    Object.assign config, c
+    unless config.name
+      return []
     # build query
-    prefix = 'PREFIX wdt: <http://www.wikidata.org/prop/direct/> '
-    prefix += 'PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> '
-    prefix += 'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> '
-    prefix += 'PREFIX foaf: <http://xmlns.com/foaf/0.1/> '
-    prefix += 'PREFIX owl: <http://www.w3.org/2002/07/owl#> '
-    prefix += 'PREFIX bif: <bif:> '
-    prefix += 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> '
-    select = 'SELECT DISTINCT ?wd ?label ?description '
-    inner = 'OPTIONAL{ ?wd <http://schema.org/description> ?description . }'
-    label = 'SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". ?Pdescription rdfs:label ?description . '
-    groupby = 'GROUP BY ?wd ?label ?description '
-    config.properties.forEach (property, key) ->
-      if `property.concat == true`
-        select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + 's) '
-      else
-        select += '?' + property.label + ' '
-        groupby += '?' + property.label + ' '
-      inner += 'OPTIONAL{ ?wd wdt:' + property.name + ' ?P' + property.label + ' . }'
-      label += '?P' + property.label + ' rdfs:label ?' + property.label + ' . '
-      return
-    label += '?wd rdfs:label ?label . '
-    label += ' } '
-    select += 'WHERE { SERVICE <http://dbpedia.org/sparql> {?dbp a foaf:Person . ?dbp rdfs:label ?l . ?dbp owl:sameAs ?wd . ?l bif:contains "' + s + '" . FILTER(STRSTARTS(xsd:string(?wd), "http://www.wikidata.org/entity/")). }'
-    limit = 'LIMIT 1000 '
-    query = prefix + select + inner + 'FILTER(LANG(?description) = "en") ' + label + '}' + groupby + limit
+    select = """
+    PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n
+    SELECT DISTINCT ?item ?label ?description 
+    """
+    optional = '\n  OPTIONAL{ ?item <http://schema.org/description> ?description . }'
+    label = """
+    \n  SERVICE wikibase:label {
+        bd:serviceParam wikibase:language "[AUTO_LANGUAGE],#{config.lang}".
+        ?Pdescription rdfs:label ?description . 
+    """
+    groupby = '\nGROUP BY ?item ?label ?description '
+    if config.properties
+      config.properties.forEach (property, key) ->
+        if property.concat is true
+          select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + 's) '
+        else
+          select += "?#{property.label} "
+          groupby += "?#{property.label} "
+        optional += "\n  OPTIONAL{ ?item wdt:#{property.name} ?P#{property.label} . }"
+        label += "\n    ?P#{property.label} rdfs:label ?#{property.label} . "
+        return
+    label += '\n    ?item rdfs:label ?label . '
+    label += '\n  } '
+    where = """
+    WHERE {
+      SERVICE wikibase:mwapi {
+        bd:serviceParam wikibase:api "EntitySearch" .
+        bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+        bd:serviceParam mwapi:search "#{config.name}" .
+        bd:serviceParam mwapi:language "en" .
+        ?item wikibase:apiOutputItem mwapi:item .
+        ?num wikibase:apiOrdinal true .
+      }
+      ?item wdt:P31 wd:Q5. 
+    """
+    query = select + where + optional + '\n  FILTER(LANG(?description) = "' + config.lang + '") ' + label + '\n}' + groupby + '\nLIMIT '+ config.limit
     # query wikidata
-    request 'https://query.wikidata.org/sparql?query=' + encodeURIComponent(query), {
+    request endpoint + encodeURIComponent(query), {
       json: true
       headers: 'User-Agent': 'request'
     }, (err, res, body) ->
       if err
         return console.log(err)
-      cb query, body
+      cb { query: query, body: body }
       return
     return
 
