@@ -43,7 +43,7 @@ Crawl = do ->
         bd:serviceParam wikibase:api "EntitySearch" .
         bd:serviceParam wikibase:endpoint "www.wikidata.org" .
         bd:serviceParam mwapi:search "#{config.name}" .
-        bd:serviceParam mwapi:language "en" .
+        bd:serviceParam mwapi:language "#{config.lang}" .
         ?item wikibase:apiOutputItem mwapi:item .
         ?num wikibase:apiOrdinal true .
       }
