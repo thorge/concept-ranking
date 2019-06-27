@@ -30,7 +30,6 @@ To build the application, please use *grunt* from within the *crawl* directory:
 Require the file in your js and retrieve data like this:
     
     const crawl = require('../build/crawl.min.js');
-    const fs = require('fs');
 
     // build request
     const request = {
