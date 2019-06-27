@@ -5,6 +5,7 @@ Crawl = do ->
     limit: 1000,
     lang: 'en'
   }
+  
   # Retrieve data from Wikidata
   # Makes use of Mediawiki API Service for full text search.
   retrieve = (c, cb) ->
@@ -49,7 +50,8 @@ Crawl = do ->
       ?item wdt:P31 wd:Q5. 
     """
     query = select + where + optional + '\n  FILTER(LANG(?description) = "' + config.lang + '") ' + label + '\n}' + groupby + '\nLIMIT '+ config.limit
-    # query wikidata
+    
+    # query endpoint
     request endpoint + encodeURIComponent(query), {
       json: true
       headers: 'User-Agent': 'request'
@@ -60,6 +62,6 @@ Crawl = do ->
       return
     return
 
-  # export public functions
+  # return public functions
   { retrieve: retrieve }
 module.exports = Crawl

@@ -1,4 +1,4 @@
-/* example of federated query */
+/* example of query */
 
 const crawl = require('../build/crawl.min.js');
 const fs = require('fs');
