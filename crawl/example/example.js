@@ -1,6 +1,6 @@
 /* example of query */
 
-const crawl = require('../build/crawl.js');
+const crawl = require('../build/crawl.min.js');
 const fs = require('fs');
 
 // build request
