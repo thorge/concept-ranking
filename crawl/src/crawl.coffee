@@ -7,7 +7,7 @@ Crawl = do ->
     lang: 'en'
   }
   
-  # Helper
+  # Helper function that returns array with only unique items
   uniq = (a) ->
     prims = 
       'boolean': {}
@@ -41,7 +41,7 @@ Crawl = do ->
     """
     groupby = '\nGROUP BY ?item ?label ?description '
     config.properties.forEach (property, key) ->
-      if property.concat is true
+      if property.concat is true or property.stopword is true
         select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + ') '
       else
         select += "?#{property.label} "
@@ -72,7 +72,7 @@ Crawl = do ->
     }, (err, res, body) ->
       if err
         return console.log(err)
-      # remove stopwords
+      # remove stopwords from properties
       config.properties.forEach (property, key) ->
         if property.stopword is true
           body.results.bindings.forEach (item) ->
@@ -83,6 +83,7 @@ Crawl = do ->
               if property.delimiter
                 s = s.join property.delimiter
               item[property.label].value = s
+      # remove stopwords from description
       if config.description.stopword is true
         body.results.bindings.forEach (item) ->
           if item.description.value
@@ -92,7 +93,7 @@ Crawl = do ->
             if config.description.delimiter
               s = s.join config.description.delimiter
             item.description.value = s
-      console.log(body.results.bindings)
+      # callback
       cb { query: query, body: body }
       return
     return
