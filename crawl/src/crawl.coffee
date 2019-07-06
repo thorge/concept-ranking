@@ -1,4 +1,5 @@
 request = require('request')
+sw = require('stopword')
 Crawl = do ->
   endpoint = 'https://query.wikidata.org/sparql?query='
   config = {
@@ -6,11 +7,25 @@ Crawl = do ->
     lang: 'en'
   }
   
+  # Helper
+  uniq = (a) ->
+    prims = 
+      'boolean': {}
+      'number': {}
+      'string': {}
+    objs = []
+    a.filter (item) ->
+      type = typeof item
+      if type of prims
+        if prims[type].hasOwnProperty(item) then false else (prims[type][item] = true)
+      else
+        if objs.indexOf(item) >= 0 then false else objs.push(item)
+  
   # Retrieve data from Wikidata
   # Makes use of Mediawiki API Service for full text search.
   retrieve = (c, cb) ->
     Object.assign config, c
-    unless config.name
+    unless config.name and config.properties and config.lang
       return []
     # build query
     select = """
@@ -25,16 +40,15 @@ Crawl = do ->
         ?Pdescription rdfs:label ?description . 
     """
     groupby = '\nGROUP BY ?item ?label ?description '
-    if config.properties
-      config.properties.forEach (property, key) ->
-        if property.concat is true
-          select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + 's) '
-        else
-          select += "?#{property.label} "
-          groupby += "?#{property.label} "
-        optional += "\n  OPTIONAL{ ?item wdt:#{property.name} ?P#{property.label} . }"
-        label += "\n    ?P#{property.label} rdfs:label ?#{property.label} . "
-        return
+    config.properties.forEach (property, key) ->
+      if property.concat is true
+        select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + ') '
+      else
+        select += "?#{property.label} "
+        groupby += "?#{property.label} "
+      optional += "\n  OPTIONAL{ ?item wdt:#{property.name} ?P#{property.label} . }"
+      label += "\n    ?P#{property.label} rdfs:label ?#{property.label} . "
+      return
     label += '\n    ?item rdfs:label ?label . '
     label += '\n  } '
     where = """
@@ -58,6 +72,27 @@ Crawl = do ->
     }, (err, res, body) ->
       if err
         return console.log(err)
+      # remove stopwords
+      config.properties.forEach (property, key) ->
+        if property.stopword is true
+          body.results.bindings.forEach (item) ->
+            if item[property.label].value
+              s = sw.removeStopwords item[property.label].value.match(/\b(\S+)\b/g), sw[config.lang]
+              if property.unique is true
+                s = uniq(s)
+              if property.delimiter
+                s = s.join property.delimiter
+              item[property.label].value = s
+      if config.description.stopword is true
+        body.results.bindings.forEach (item) ->
+          if item.description.value
+            s = sw.removeStopwords item.description.value.match(/\b(\S+)\b/g), sw[config.lang]
+            if config.description.unique is true
+              s = uniq(s)
+            if config.description.delimiter
+              s = s.join config.description.delimiter
+            item.description.value = s
+      console.log(body.results.bindings)
       cb { query: query, body: body }
       return
     return
