@@ -49,7 +49,7 @@ If you want to build or run the application, you must install *grunt*, *coffeesc
     $ cd crawl && npm install && sudo npm install -g grunt coffeescript
 
  You may choose to install without the development dependencies by using the *--production* flag:
- 
+
     $ cd crawl && npm install --production
 
 #### Build
@@ -61,34 +61,43 @@ To build the application, please use *grunt* from within the *crawl* directory:
 #### Retrieve data
 Require the file in your js and retrieve data like this:
     
-    const crawl = require('../build/crawl.min.js');
+```javascript
+const crawl = require('../build/crawl.min.js');
 
-    // build request
-    const request = {
-      name: 'Christian Albrecht',
-      properties: [
-        { name: 'P1477', label: 'birthname'},
-        { name: 'P19', label: 'placeofbirth'},
-        { name: 'P20', label: 'placeofdeath'},
-        { name: 'P106', label: 'occupation', concat: true, delimiter: ','},
-        { name: 'P108', label: 'employer', concat: true, delimiter: ','},
-        { name: 'P463', label: 'memberof', concat: true, delimiter: ','}   
-      ],
-      limit: 1000,
-      lang: 'de'
-    }
+// build request
+const request = {
+  name: 'Christian Albrecht',
+  description: {
+    stopword: true,
+    delimiter: ','
+  },
+  properties: [
+    { name: 'P1477', label: 'birthname'},
+    { name: 'P19', label: 'placeofbirth'},
+    { name: 'P20', label: 'placeofdeath'},
+    { name: 'P106', label: 'occupation', concat: true, delimiter: ',', stopword: true, unique: true},
+    { name: 'P108', label: 'employer', concat: true, delimiter: ',', stopword: true, unique: true},
+    { name: 'P463', label: 'memberof', concat: true, stopword: true, unique: true}
+  ],
+  limit: 1000,
+  lang: 'en'
+}
 
-    // fire request
-    crawl.retrieve(request, function(res) {
-      console.log(res.query);
-      console.log(res.body);
-    });
-    
+// fire request
+crawl.retrieve(request, function(res) {
+  console.log(res.query);
+  console.log(res.body);
+});
+```
+
+You have the option to remove stopwords from properties and description text. Stopwords are removed corresponding to selected language. If you want to join the stopwords you may set a delimiter (same delimiter that's used for concatenating). By the way, if you choose to remove stopwords, resultsets for corresponding property are always concatenated before stopword removal. If you want to have unique results from stopword removal, you can by setting unique flag. 
+
 #### 3. Example
+
 You can run the example from within the *example* directory by:
     
     $ cd ./example/ && node example.js
-    
+
 ### 4. Context Comparison
 TODO
 
