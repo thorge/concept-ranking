@@ -13,7 +13,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     config = {
       limit: 1000,
       lang: 'en'
-    }; // Helper
+    }; // Helper function that returns array with only unique items
 
     uniq = function uniq(a) {
       var objs, prims;
@@ -59,7 +59,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       label = "\n  SERVICE wikibase:label {\n    bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],".concat(config.lang, "\".\n    ?Pdescription rdfs:label ?description . ");
       groupby = '\nGROUP BY ?item ?label ?description ';
       config.properties.forEach(function (property, key) {
-        if (property.concat === true) {
+        if (property.concat === true || property.stopword === true) {
           select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + ') ';
         } else {
           select += "?".concat(property.label, " ");
@@ -82,7 +82,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       }, function (err, res, body) {
         if (err) {
           return console.log(err);
-        } // remove stopwords
+        } // remove stopwords from properties
 
 
         config.properties.forEach(function (property, key) {
@@ -105,7 +105,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               }
             });
           }
-        });
+        }); // remove stopwords from description
 
         if (config.description.stopword === true) {
           body.results.bindings.forEach(function (item) {
@@ -125,9 +125,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
               return item.description.value = s;
             }
           });
-        }
+        } // callback
 
-        console.log(body.results.bindings);
+
         cb({
           query: query,
           body: body
