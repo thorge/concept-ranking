@@ -8,11 +8,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
   sw = require('stopword');
 
   Crawl = function () {
-    var args, config, endpoint, err, retrieve, uniq;
-    endpoint = 'https://query.wikidata.org/sparql?query=';
+    var args, config, err, removeStopwords, retrieve, uniq;
     config = {
-      limit: 1000,
-      lang: 'en'
+      "limit": 1000,
+      "lang": "en",
+      "endpoint": "https://query.wikidata.org/sparql?query="
     }; // Helper function that returns array with only unique items
 
     uniq = function uniq(a) {
@@ -41,6 +41,27 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           }
         }
       });
+    }; // Helper function that removes stopwords from property in bindings array
+
+
+    removeStopwords = function removeStopwords(bindings, property) {
+      return bindings.forEach(function (item) {
+        var s;
+
+        if (item[property.label].value) {
+          s = sw.removeStopwords(item[property.label].value.match(/\b(\S+)\b/g), sw[config.lang]);
+
+          if (property.unique === true) {
+            s = uniq(s);
+          }
+
+          if (property.concat) {
+            s = s.join(property.delimiter);
+          }
+
+          return item[property.label].value = s;
+        }
+      });
     }; // Retrieve data from Wikidata
     // Makes use of Mediawiki API Service for full text search.
 
@@ -55,12 +76,15 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 
       select = "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT DISTINCT ?item ?label ?description ";
-      optional = '\n  OPTIONAL{ ?item <http://schema.org/description> ?description . }';
-      label = "\n  SERVICE wikibase:label {\n    bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],".concat(config.lang, "\".\n    ?Pdescription rdfs:label ?description . ");
+      optional = "\n  OPTIONAL{ ?item <http://schema.org/description> ?".concat(config.description.label, " . }");
+      label = "\n  SERVICE wikibase:label {\n    bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],".concat(config.lang, "\".\n    ?Pdescription rdfs:label ?").concat(config.description.label, " . ");
       groupby = '\nGROUP BY ?item ?label ?description ';
       config.properties.forEach(function (property, key) {
+        var delimiter;
+
         if (property.concat === true || property.stopword === true) {
-          select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + ') ';
+          delimiter = property.delimiter ? property.delimiter : " ";
+          select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR="' + "".concat(delimiter) + '") AS ?' + property.label + ') ';
         } else {
           select += "?".concat(property.label, " ");
           groupby += "?".concat(property.label, " ");
@@ -74,7 +98,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       where = "WHERE {\n  SERVICE wikibase:mwapi {\n    bd:serviceParam wikibase:api \"EntitySearch\" .\n    bd:serviceParam wikibase:endpoint \"www.wikidata.org\" .\n    bd:serviceParam mwapi:search \"".concat(config.name, "\" .\n    bd:serviceParam mwapi:language \"").concat(config.lang, "\" .\n    ?item wikibase:apiOutputItem mwapi:item .\n    ?num wikibase:apiOrdinal true .\n  }\n  ?item wdt:P31 wd:Q5. ");
       query = select + where + optional + '\n  FILTER(LANG(?description) = "' + config.lang + '") ' + label + '\n}' + groupby + '\nLIMIT ' + config.limit; // query endpoint
 
-      request(endpoint + encodeURIComponent(query), {
+      request(config.endpoint + encodeURIComponent(query), {
         json: true,
         headers: {
           'User-Agent': 'request'
@@ -87,44 +111,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         config.properties.forEach(function (property, key) {
           if (property.stopword === true) {
-            return body.results.bindings.forEach(function (item) {
-              var s;
-
-              if (item[property.label].value) {
-                s = sw.removeStopwords(item[property.label].value.match(/\b(\S+)\b/g), sw[config.lang]);
-
-                if (property.unique === true) {
-                  s = uniq(s);
-                }
-
-                if (property.delimiter) {
-                  s = s.join(property.delimiter);
-                }
-
-                return item[property.label].value = s;
-              }
-            });
+            return removeStopwords(body.results.bindings, property);
           }
         }); // remove stopwords from description
 
         if (config.description.stopword === true) {
-          body.results.bindings.forEach(function (item) {
-            var s;
-
-            if (item.description.value) {
-              s = sw.removeStopwords(item.description.value.match(/\b(\S+)\b/g), sw[config.lang]);
-
-              if (config.description.unique === true) {
-                s = uniq(s);
-              }
-
-              if (config.description.delimiter) {
-                s = s.join(config.description.delimiter);
-              }
-
-              return item.description.value = s;
-            }
-          });
+          removeStopwords(body.results.bindings, config.description);
         } // callback
 
 
@@ -146,7 +138,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       } catch (error) {
         err = error;
         console.log([{
-          "error": "Wrong input format."
+          "msg": "Wrong input format.",
+          "error": err
         }]);
       }
     }

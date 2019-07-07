@@ -1,10 +1,11 @@
 request = require('request')
 sw = require('stopword')
 Crawl = do ->
-  endpoint = 'https://query.wikidata.org/sparql?query='
+  
   config = {
-    limit: 1000,
-    lang: 'en'
+    "limit": 1000,
+    "lang": "en",
+    "endpoint": "https://query.wikidata.org/sparql?query="
   }
 
   # Helper function that returns array with only unique items
@@ -21,6 +22,17 @@ Crawl = do ->
       else
         if objs.indexOf(item) >= 0 then false else objs.push(item)
   
+  # Helper function that removes stopwords from property in bindings array
+  removeStopwords = (bindings, property) ->
+    bindings.forEach (item) ->
+      if item[property.label].value
+        s = sw.removeStopwords item[property.label].value.match(/\b(\S+)\b/g), sw[config.lang]
+        if property.unique is true
+          s = uniq(s)
+        if property.concat
+          s = s.join property.delimiter
+        item[property.label].value = s
+              
   # Retrieve data from Wikidata
   # Makes use of Mediawiki API Service for full text search.
   retrieve = (c, cb) ->
@@ -33,16 +45,17 @@ Crawl = do ->
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n
     SELECT DISTINCT ?item ?label ?description 
     """
-    optional = '\n  OPTIONAL{ ?item <http://schema.org/description> ?description . }'
+    optional = "\n  OPTIONAL{ ?item <http://schema.org/description> ?#{config.description.label} . }"
     label = """
     \n  SERVICE wikibase:label {
         bd:serviceParam wikibase:language "[AUTO_LANGUAGE],#{config.lang}".
-        ?Pdescription rdfs:label ?description . 
+        ?Pdescription rdfs:label ?#{config.description.label} . 
     """
     groupby = '\nGROUP BY ?item ?label ?description '
     config.properties.forEach (property, key) ->
       if property.concat is true or property.stopword is true
-        select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + ') '
+        delimiter = if property.delimiter then property.delimiter else " "
+        select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR="' + "#{delimiter}" + '") AS ?' + property.label + ') '
       else
         select += "?#{property.label} "
         groupby += "?#{property.label} "
@@ -66,33 +79,22 @@ Crawl = do ->
     query = select + where + optional + '\n  FILTER(LANG(?description) = "' + config.lang + '") ' + label + '\n}' + groupby + '\nLIMIT '+ config.limit
     
     # query endpoint
-    request endpoint + encodeURIComponent(query), {
+    request config.endpoint + encodeURIComponent(query), {
       json: true
       headers: 'User-Agent': 'request'
     }, (err, res, body) ->
       if err
         return console.log(err)
+        
       # remove stopwords from properties
       config.properties.forEach (property, key) ->
         if property.stopword is true
-          body.results.bindings.forEach (item) ->
-            if item[property.label].value
-              s = sw.removeStopwords item[property.label].value.match(/\b(\S+)\b/g), sw[config.lang]
-              if property.unique is true
-                s = uniq(s)
-              if property.delimiter
-                s = s.join property.delimiter
-              item[property.label].value = s
+          removeStopwords(body.results.bindings, property)
+       
       # remove stopwords from description
       if config.description.stopword is true
-        body.results.bindings.forEach (item) ->
-          if item.description.value
-            s = sw.removeStopwords item.description.value.match(/\b(\S+)\b/g), sw[config.lang]
-            if config.description.unique is true
-              s = uniq(s)
-            if config.description.delimiter
-              s = s.join config.description.delimiter
-            item.description.value = s
+        removeStopwords(body.results.bindings, config.description)
+       
       # callback
       cb { query: query, body: body }
       return
@@ -105,7 +107,7 @@ Crawl = do ->
       retrieve JSON.parse(args[0]), (res) ->
         console.log JSON.stringify(res.body.results.bindings)
     catch err
-      console.log ["error": "Wrong input format."]
+      console.log ["msg": "Wrong input format.", "error": err]
       
   # return public functions
   { retrieve: retrieve }

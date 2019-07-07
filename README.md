@@ -46,10 +46,10 @@ We created a nodejs application to query Wikidata. You can find the code in *cra
 $ sudo apt install nodejs npm
 ```
 
-If you want to build or run the application, you must install *grunt*, *coffeescript* and the corresponding npm modules from *crawl* directory:
+If you want to run the application, you must install the corresponding npm modules:
 
 ```bash
-$ cd crawl && npm install && sudo npm install -g grunt coffeescript
+$ cd crawl && npm install
 ```
 
  You may choose to install without the development dependencies by using the *--production* flag:
@@ -59,6 +59,12 @@ $ cd crawl && npm install --production
 ```
 
 #### Build
+If you want to build the application, you must install *grunt*, *coffeescript* and the corresponding npm modules:
+
+```bash
+$ cd crawl && npm install && sudo npm install -g grunt coffeescript
+```
+
 To build the application, please use *grunt* from within the *crawl* directory:
 
 ```bash
@@ -75,6 +81,7 @@ const crawl = require('../build/crawl.min.js');
 const request = {
   "name": "Christian Albrecht",
   "description": {
+    "label": "description",
     "stopword": true,
     "delimiter": ","
   },
@@ -114,6 +121,7 @@ You can run any request from command line by:
 $ node build/crawl.js '{
     "name": "Christian Albrecht",
     "description": {
+      "label": "description",
       "stopword": true,
       "delimiter": ","
     },
