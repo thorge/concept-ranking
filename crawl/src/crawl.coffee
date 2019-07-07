@@ -107,12 +107,17 @@ Crawl = do ->
         removeStopwords(body.results.bindings, config.description)
       
       if config.flatten is true
-        res = {}
+        res = []
         for item of body.results.bindings
+          i = {
+            "label": body.results.bindings[item].label.value,
+            "item": body.results.bindings[item].item.value
+          }
           if config.unique is true
-            res[body.results.bindings[item].item.value] = uniq(flatten(body.results.bindings[item]))
+            i.value = uniq(flatten(body.results.bindings[item]))
           else
-            res[body.results.bindings[item].item.value] = flatten(body.results.bindings[item])
+            i.value = flatten(body.results.bindings[item])
+          res.push i
         body.results = res
         
       # callback
