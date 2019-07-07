@@ -81,6 +81,7 @@ const crawl = require('../build/crawl.min.js');
 const request = {
   "name": "Christian Albrecht",
   "description": {
+    "label": "description",
     "stopword": true,
     "delimiter": ","
   },
@@ -120,6 +121,7 @@ You can run any request from command line by:
 $ node build/crawl.js '{
     "name": "Christian Albrecht",
     "description": {
+      "label": "description",
       "stopword": true,
       "delimiter": ","
     },
