@@ -48,8 +48,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       return bindings.forEach(function (item) {
         var s;
 
-        if (item[property].value) {
-          s = sw.removeStopwords(item[property].value.match(/\b(\S+)\b/g), sw[config.lang]);
+        if (item[property.label].value) {
+          s = sw.removeStopwords(item[property.label].value.match(/\b(\S+)\b/g), sw[config.lang]);
 
           if (property.unique === true) {
             s = uniq(s);
@@ -59,7 +59,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
             s = s.join(property.delimiter);
           }
 
-          return item[property].value = s;
+          return item[property.label].value = s;
         }
       });
     }; // Retrieve data from Wikidata
@@ -76,8 +76,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 
       select = "PREFIX wdt: <http://www.wikidata.org/prop/direct/>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT DISTINCT ?item ?label ?description ";
-      optional = '\n  OPTIONAL{ ?item <http://schema.org/description> ?description . }';
-      label = "\n  SERVICE wikibase:label {\n    bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],".concat(config.lang, "\".\n    ?Pdescription rdfs:label ?description . ");
+      optional = "\n  OPTIONAL{ ?item <http://schema.org/description> ?".concat(config.description.label, " . }");
+      label = "\n  SERVICE wikibase:label {\n    bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],".concat(config.lang, "\".\n    ?Pdescription rdfs:label ?").concat(config.description.label, " . ");
       groupby = '\nGROUP BY ?item ?label ?description ';
       config.properties.forEach(function (property, key) {
         var delimiter;
@@ -111,7 +111,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         config.properties.forEach(function (property, key) {
           if (property.stopword === true) {
-            return removeStopwords(body.results.bindings, property.label);
+            return removeStopwords(body.results.bindings, property);
           }
         }); // remove stopwords from description
 
