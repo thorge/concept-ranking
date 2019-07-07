@@ -117,9 +117,10 @@ $ cd ./example/ && node example.js
 
 You can run any request from command line by:
 
+**Query**
 ```bash
 $ node build/crawl.js '{
-    "name": "Christian Albrecht",
+    "name": "Max Planck",
     "description": {
       "label": "description",
       "stopword": true,
@@ -130,11 +131,121 @@ $ node build/crawl.js '{
       { "name": "P19", "label": "placeofbirth"},
       { "name": "P21", "label": "sex"},
       { "name": "P20", "label": "placeofdeath"},
+      { "name": "P106", "label": "occupation", "concat": true, "delimiter": ",", "stopword": true, "unique": true},
+      { "name": "P108", "label": "employer", "concat": true, "delimiter": ",", "stopword": true, "unique": true},
       { "name": "P463", "label": "memberof", "concat": true, "stopword": true, "unique": true}
     ],
     "limit": 1000,
     "lang": "en"
   }'
+```
+
+**Result**
+```json
+[
+   {
+      "item":{
+         "type":"uri",
+         "value":"http://www.wikidata.org/entity/Q9021"
+      },
+      "label":{
+         "xml:lang":"en",
+         "type":"literal",
+         "value":"Max Planck"
+      },
+      "description":{
+         "xml:lang":"en",
+         "type":"literal",
+         "value":[
+            "German",
+            "theoretical",
+            "physicist"
+         ]
+      },
+      "birthname":{
+         "type":"literal",
+         "value":"Max Karl Ernst Ludwig Planck"
+      },
+      "placeofbirth":{
+         "xml:lang":"en",
+         "type":"literal",
+         "value":"Kiel"
+      },
+      "sex":{
+         "xml:lang":"en",
+         "type":"literal",
+         "value":"male"
+      },
+      "placeofdeath":{
+         "xml:lang":"en",
+         "type":"literal",
+         "value":"Göttingen"
+      },
+      "occupation":{
+         "type":"literal",
+         "value":"university,teacher,theoretical,physicist"
+      },
+      "employer":{
+         "type":"literal",
+         "value":"Ludwig,Maximilian,University,Munich,Humboldt,Berlin,University,Kiel,Frederick,William"
+      },
+      "memberof":{
+         "type":"literal",
+         "value":"Russian Academy of Sciences, Royal Society, Royal Swedish Academy of Sciences, Royal Netherlands Academy of Arts and Sciences, Q292692, Hungarian Academy of Sciences, Royal Prussian Academy of Sciences, Lincean Academy, Saxon Academy of Sciences, American Academy of Arts and Sciences, American Philosophical Society, Bavarian Academy of Sciences and Humanities, Kaiser Wilhelm Society, Deutsche Physikalische Gesellschaft, Pontifical Academy of Sciences, Notgemeinschaft der Deutschen Wissenschaft, Q2301163, German Academy of Sciences Leopoldina, Academy of Sciences of the USSR, Academy of Sciences of Turin, Saint Petersburg Academy of Sciences"
+      }
+   },
+   {
+      "item":{
+         "type":"uri",
+         "value":"http://www.wikidata.org/entity/Q1913219"
+      },
+      "label":{
+         "xml:lang":"en",
+         "type":"literal",
+         "value":"Max Planck"
+      },
+      "description":{
+         "xml:lang":"en",
+         "type":"literal",
+         "value":[
+            "German",
+            "classical",
+            "philologist",
+            "historian",
+            "high",
+            "school",
+            "teacher"
+         ]
+      },
+      "placeofbirth":{
+         "xml:lang":"en",
+         "type":"literal",
+         "value":"Feuerbach"
+      },
+      "sex":{
+         "xml:lang":"en",
+         "type":"literal",
+         "value":"male"
+      },
+      "placeofdeath":{
+         "xml:lang":"en",
+         "type":"literal",
+         "value":"Stuttgart"
+      },
+      "occupation":{
+         "type":"literal",
+         "value":"historian,pedagogue,high,school,teacher,classical,philologist"
+      },
+      "employer":{
+         "type":"literal",
+         "value":""
+      },
+      "memberof":{
+         "type":"literal",
+         "value":""
+      }
+   }
+]
 ```
 
 #### 3. Example 2 - Flattened results
@@ -147,6 +258,7 @@ $ cd ./example/ && node example2.js
 
 You can run the request also from command line by:
 
+**Query**
 ```bash
 $ node build/crawl.js '{
     "name": "Max Planck",
@@ -167,6 +279,92 @@ $ node build/crawl.js '{
     "flatten": true,
     "unique": true
   }'
+```
+
+**Result**
+```json
+[
+   {
+      "label":"Max Planck",
+      "item":"http://www.wikidata.org/entity/Q9021",
+      "value":[
+         "deutscher",
+         "Physiker",
+         "Kiel",
+         "männlich",
+         "Göttingen",
+         "Hochschullehrer",
+         "theoretischer",
+         "Ludwig-Maximilians-Universität",
+         "München",
+         "Humboldt-Universität",
+         "Berlin",
+         "Christian-Albrechts-Universität",
+         "Friedrich-Wilhelms-Universität",
+         "Königlich",
+         "Schwedische",
+         "Akademie",
+         "Wissenschaften",
+         "Russische",
+         "Royal",
+         "Society",
+         "Niederländische",
+         "Ungarische",
+         "Preußische",
+         "Akademischer",
+         "Gesangverein",
+         "Accademia",
+         "Nazionale",
+         "dei",
+         "Lincei",
+         "Sächsische",
+         "American",
+         "Academy",
+         "of",
+         "Arts",
+         "and",
+         "Sciences",
+         "Philosophical",
+         "Deutsche",
+         "Naturforscher",
+         "Leopoldina",
+         "Kaiser-Wilhelm-Gesellschaft",
+         "Förderung",
+         "UdSSR",
+         "Bayerische",
+         "delle",
+         "Scienze",
+         "Turin",
+         "Physikalische",
+         "Gesellschaft",
+         "Päpstliche",
+         "Notgemeinschaft",
+         "deutschen",
+         "Wissenschaft",
+         "Sondershäuser",
+         "Verband",
+         "Sankt",
+         "Petersburger"
+      ]
+   },
+   {
+      "label":"Max Planck",
+      "item":"http://www.wikidata.org/entity/Q1913219",
+      "value":[
+         "deutscher",
+         "Klassischer",
+         "Philologe",
+         "Althistoriker",
+         "Gymnasialdirektor",
+         "Feuerbach",
+         "männlich",
+         "Stuttgart",
+         "Historiker",
+         "Pädagoge",
+         "Gymnasiallehrer"
+      ]
+   }
+]
 ```
 
 ### 4. Context Comparison

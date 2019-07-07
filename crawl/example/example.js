@@ -5,7 +5,7 @@ const fs = require('fs');
 
 // build request
 const request = {
-  "name": "Christian Albrecht",
+  "name": "Max Planck",
   "description": {
     "label": "description",
     "stopword": true,
@@ -18,7 +18,7 @@ const request = {
     { "name": "P20", "label": "placeofdeath"},
     { "name": "P106", "label": "occupation", "concat": true, "delimiter": ",", "stopword": true, "unique": true},
     { "name": "P108", "label": "employer", "concat": true, "delimiter": ",", "stopword": true, "unique": true},
-    { "name": "P463", "label": "memberof", "concat": true, "stopword": true, "unique": true}
+    { "name": "P463", "label": "memberof", "concat": true, "delimiter": ", "}
   ],
   "limit": 1000,
   "lang": "en"
