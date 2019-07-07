@@ -6,7 +6,7 @@ Crawl = do ->
     limit: 1000,
     lang: 'en'
   }
-  
+
   # Helper function that returns array with only unique items
   uniq = (a) ->
     prims = 
@@ -97,7 +97,16 @@ Crawl = do ->
       cb { query: query, body: body }
       return
     return
-
+  
+  # run from commandline
+  args = process.argv.slice(2);
+  if args[0]
+    try
+      retrieve JSON.parse(args[0]), (res) ->
+        console.log JSON.stringify(res.body.results.bindings)
+    catch err
+      console.log ["error": "Wrong input format."]
+      
   # return public functions
   { retrieve: retrieve }
 module.exports = Crawl
