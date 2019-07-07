@@ -1,4 +1,4 @@
-/* example of query with unique flattened results */
+/* example of query */
 
 const crawl = require('../build/crawl.min.js');
 const fs = require('fs');
@@ -21,7 +21,7 @@ const request = {
     { "name": "P463", "label": "memberof", "concat": true, "stopword": true, "unique": true}
   ],
   "limit": 1000,
-  "lang": "de"
+  "lang": "en"
 }
 
 // fire request

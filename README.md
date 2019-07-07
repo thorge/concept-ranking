@@ -95,7 +95,7 @@ const request = {
     { "name": "P463", "label": "memberof", "concat": true, "stopword": true, "unique": true}
   ],
   "limit": 1000,
-  "lang": "de"
+  "lang": "en"
 }
 
 // fire request
@@ -107,7 +107,7 @@ crawl.retrieve(request, function(res) {
 
 You have the option to remove stopwords from properties and description text. Stopwords are removed corresponding to selected language. If you want to join the stopwords you may set a delimiter (same delimiter that's used for concatenating). By the way, if you choose to remove stopwords, resultsets for corresponding property are always concatenated before stopword removal. If you want to have unique results from stopword removal, you can by setting unique flag. 
 
-#### 3. Example
+#### 3. Example 1
 
 You can run the example from within the *example* directory by:
     
@@ -133,7 +133,39 @@ $ node build/crawl.js '{
       { "name": "P463", "label": "memberof", "concat": true, "stopword": true, "unique": true}
     ],
     "limit": 1000,
-    "lang": "de"
+    "lang": "en"
+  }'
+```
+
+#### 3. Example 2 - Flattened results
+
+Example 2 returns flattened unique values for every concept found. You can run the example 2 from within the *example* directory by:
+    
+```bash
+$ cd ./example/ && node example2.js
+```
+
+You can run the request also from command line by:
+
+```bash
+$ node build/crawl.js '{
+    "name": "Max Planck",
+    "description": {
+      "label": "description",
+      "stopword": true
+    },
+    "properties": [
+      { "name": "P19", "label": "placeofbirth"},
+      { "name": "P21", "label": "sex"},
+      { "name": "P20", "label": "placeofdeath"},
+      { "name": "P106", "label": "occupation", "stopword": true},
+      { "name": "P108", "label": "employer", "stopword": true, "unique": true},
+      { "name": "P463", "label": "memberof", "stopword": true, "unique": true}
+    ],
+    "limit": 1000,
+    "lang": "de",
+    "flatten": true,
+    "unique": true
   }'
 ```
 

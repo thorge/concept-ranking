@@ -1,4 +1,4 @@
-/* example of query */
+/* example of query with unique flattened results */
 
 const crawl = require('../build/crawl.min.js');
 const fs = require('fs');
@@ -7,7 +7,8 @@ const fs = require('fs');
 const request = {
   "name": "Max Planck",
   "description": {
-    "label": "description", "stopword": true
+    "label": "description",
+    "stopword": true
   },
   "properties": [
     { "name": "P19", "label": "placeofbirth"},
@@ -18,7 +19,7 @@ const request = {
     { "name": "P463", "label": "memberof", "stopword": true, "unique": true}
   ],
   "limit": 1000,
-  "lang": "de",
+  "lang": "en",
   "flatten": true,
   "unique": true
 }
