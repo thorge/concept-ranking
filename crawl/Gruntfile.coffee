@@ -15,14 +15,14 @@ module.exports = (grunt) ->
         presets: ['@babel/preset-env']
       dist:
         files:
-          '<%= build_path %>/crawl.js': '<%= build_path %>/crawl.js'  
+          '<%= build_path %>/<%= pkg.name %>.js': '<%= build_path %>/<%= pkg.name %>.js'  
     uglify:
       options:
           sourceMap: true,
           sourceMapName: '<%= build_path %>/<%= pkg.name %>.js.map'
       dist:
         files:
-          '<%= build_path %>/crawl.min.js': ['<%= build_path %>/crawl.js']
+          '<%= build_path %>/<%= pkg.name %>.min.js': ['<%= build_path %>/<%= pkg.name %>.js']
 
   # define tasks
   grunt.registerTask 'default', [
