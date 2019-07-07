@@ -42,21 +42,28 @@ We created a nodejs application to query Wikidata. You can find the code in *cra
 #### Prerequisites
 **Debian/Ubuntu**: Please make sure, you have nodejs and npm installed:
 
-    $ sudo apt install nodejs npm
+```bash
+$ sudo apt install nodejs npm
+```
 
 If you want to build or run the application, you must install *grunt*, *coffeescript* and the corresponding npm modules from *crawl* directory:
 
-    $ cd crawl && npm install && sudo npm install -g grunt coffeescript
+```bash
+$ cd crawl && npm install && sudo npm install -g grunt coffeescript
+```
 
  You may choose to install without the development dependencies by using the *--production* flag:
 
-    $ cd crawl && npm install --production
+```bash
+$ cd crawl && npm install --production
+```
 
 #### Build
 To build the application, please use *grunt* from within the *crawl* directory:
 
-    $ cd crawl && grunt
-
+```bash
+$ cd crawl && grunt
+```
 
 #### Retrieve data
 Require the file in your js and retrieve data like this:
@@ -66,21 +73,22 @@ const crawl = require('../build/crawl.min.js');
 
 // build request
 const request = {
-  name: 'Christian Albrecht',
-  description: {
-    stopword: true,
-    delimiter: ','
+  "name": "Christian Albrecht",
+  "description": {
+    "stopword": true,
+    "delimiter": ","
   },
-  properties: [
-    { name: 'P1477', label: 'birthname'},
-    { name: 'P19', label: 'placeofbirth'},
-    { name: 'P20', label: 'placeofdeath'},
-    { name: 'P106', label: 'occupation', concat: true, delimiter: ',', stopword: true, unique: true},
-    { name: 'P108', label: 'employer', concat: true, delimiter: ',', stopword: true, unique: true},
-    { name: 'P463', label: 'memberof', concat: true, stopword: true, unique: true}
+  "properties": [
+    { "name": "P1477", "label": "birthname"},
+    { "name": "P19", "label": "placeofbirth"},
+    { "name": "P21", "label": "sex"},
+    { "name": "P20", "label": "placeofdeath"},
+    { "name": "P106", "label": "occupation", "concat": true, "delimiter": ",", "stopword": true, "unique": true},
+    { "name": "P108", "label": "employer", "concat": true, "delimiter": ",", "stopword": true, "unique": true},
+    { "name": "P463", "label": "memberof", "concat": true, "stopword": true, "unique": true}
   ],
-  limit: 1000,
-  lang: 'en'
+  "limit": 1000,
+  "lang": "de"
 }
 
 // fire request
@@ -96,7 +104,30 @@ You have the option to remove stopwords from properties and description text. St
 
 You can run the example from within the *example* directory by:
     
-    $ cd ./example/ && node example.js
+```bash
+$ cd ./example/ && node example.js
+```
+
+You can run any request from command line by:
+
+```bash
+$ node build/crawl.js '{
+    "name": "Christian Albrecht",
+    "description": {
+      "stopword": true,
+      "delimiter": ","
+    },
+    "properties": [
+      { "name": "P1477", "label": "birthname"},
+      { "name": "P19", "label": "placeofbirth"},
+      { "name": "P21", "label": "sex"},
+      { "name": "P20", "label": "placeofdeath"},
+      { "name": "P463", "label": "memberof", "concat": true, "stopword": true, "unique": true}
+    ],
+    "limit": 1000,
+    "lang": "de"
+  }'
+```
 
 ### 4. Context Comparison
 TODO
