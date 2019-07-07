@@ -23,14 +23,14 @@ Crawl = do ->
         if objs.indexOf(item) >= 0 then false else objs.push(item)
   
   # Helper function that removes stopwords from property in bindings array
-  removeStopwords = (bindings, property, unique, delimiter) ->
+  removeStopwords = (bindings, property) ->
     bindings.forEach (item) ->
       if item[property].value
         s = sw.removeStopwords item[property].value.match(/\b(\S+)\b/g), sw[config.lang]
-        if unique is true
+        if property.unique is true
           s = uniq(s)
-        if delimiter
-          s = s.join delimiter
+        if property.concat
+          s = s.join property.delimiter
         item[property].value = s
               
   # Retrieve data from Wikidata
@@ -54,7 +54,8 @@ Crawl = do ->
     groupby = '\nGROUP BY ?item ?label ?description '
     config.properties.forEach (property, key) ->
       if property.concat is true or property.stopword is true
-        select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + ') '
+        delimiter = if property.delimiter then property.delimiter else " "
+        select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR="' + "#{delimiter}" + '") AS ?' + property.label + ') '
       else
         select += "?#{property.label} "
         groupby += "?#{property.label} "
@@ -88,11 +89,11 @@ Crawl = do ->
       # remove stopwords from properties
       config.properties.forEach (property, key) ->
         if property.stopword is true
-          removeStopwords(body.results.bindings, property.label, property.unique, property.delimiter)
+          removeStopwords(body.results.bindings, property.label)
        
       # remove stopwords from description
       if config.description.stopword is true
-        removeStopwords(body.results.bindings, "description", config.description.unique, config.description.delimiter)
+        removeStopwords(body.results.bindings, config.description)
        
       # callback
       cb { query: query, body: body }
@@ -106,7 +107,7 @@ Crawl = do ->
       retrieve JSON.parse(args[0]), (res) ->
         console.log JSON.stringify(res.body.results.bindings)
     catch err
-      console.log ["error": "Wrong input format."]
+      console.log ["msg": "Wrong input format.", "error": err]
       
   # return public functions
   { retrieve: retrieve }
