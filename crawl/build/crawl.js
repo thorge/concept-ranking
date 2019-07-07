@@ -44,19 +44,19 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     }; // Helper function that removes stopwords from property in bindings array
 
 
-    removeStopwords = function removeStopwords(bindings, property, unique, delimiter) {
+    removeStopwords = function removeStopwords(bindings, property) {
       return bindings.forEach(function (item) {
         var s;
 
         if (item[property].value) {
           s = sw.removeStopwords(item[property].value.match(/\b(\S+)\b/g), sw[config.lang]);
 
-          if (unique === true) {
+          if (property.unique === true) {
             s = uniq(s);
           }
 
-          if (delimiter) {
-            s = s.join(delimiter);
+          if (property.concat) {
+            s = s.join(property.delimiter);
           }
 
           return item[property].value = s;
@@ -80,8 +80,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       label = "\n  SERVICE wikibase:label {\n    bd:serviceParam wikibase:language \"[AUTO_LANGUAGE],".concat(config.lang, "\".\n    ?Pdescription rdfs:label ?description . ");
       groupby = '\nGROUP BY ?item ?label ?description ';
       config.properties.forEach(function (property, key) {
+        var delimiter;
+
         if (property.concat === true || property.stopword === true) {
-          select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR=", ") AS ?' + property.label + ') ';
+          delimiter = property.delimiter ? property.delimiter : " ";
+          select += '(GROUP_CONCAT(DISTINCT ?' + property.label + '; SEPARATOR="' + "".concat(delimiter) + '") AS ?' + property.label + ') ';
         } else {
           select += "?".concat(property.label, " ");
           groupby += "?".concat(property.label, " ");
@@ -108,12 +111,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         config.properties.forEach(function (property, key) {
           if (property.stopword === true) {
-            return removeStopwords(body.results.bindings, property.label, property.unique, property.delimiter);
+            return removeStopwords(body.results.bindings, property.label);
           }
         }); // remove stopwords from description
 
         if (config.description.stopword === true) {
-          removeStopwords(body.results.bindings, "description", config.description.unique, config.description.delimiter);
+          removeStopwords(body.results.bindings, config.description);
         } // callback
 
 
@@ -135,7 +138,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       } catch (error) {
         err = error;
         console.log([{
-          "error": "Wrong input format."
+          "msg": "Wrong input format.",
+          "error": err
         }]);
       }
     }
