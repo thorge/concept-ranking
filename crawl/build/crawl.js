@@ -8,11 +8,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
   sw = require('stopword');
 
   Crawl = function () {
-    var args, config, endpoint, err, removeStopwords, retrieve, uniq;
-    endpoint = 'https://query.wikidata.org/sparql?query=';
+    var args, config, err, removeStopwords, retrieve, uniq;
     config = {
-      limit: 1000,
-      lang: 'en'
+      "limit": 1000,
+      "lang": "en",
+      "endpoint": "https://query.wikidata.org/sparql?query="
     }; // Helper function that returns array with only unique items
 
     uniq = function uniq(a) {
@@ -95,7 +95,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
       where = "WHERE {\n  SERVICE wikibase:mwapi {\n    bd:serviceParam wikibase:api \"EntitySearch\" .\n    bd:serviceParam wikibase:endpoint \"www.wikidata.org\" .\n    bd:serviceParam mwapi:search \"".concat(config.name, "\" .\n    bd:serviceParam mwapi:language \"").concat(config.lang, "\" .\n    ?item wikibase:apiOutputItem mwapi:item .\n    ?num wikibase:apiOrdinal true .\n  }\n  ?item wdt:P31 wd:Q5. ");
       query = select + where + optional + '\n  FILTER(LANG(?description) = "' + config.lang + '") ' + label + '\n}' + groupby + '\nLIMIT ' + config.limit; // query endpoint
 
-      request(endpoint + encodeURIComponent(query), {
+      request(config.endpoint + encodeURIComponent(query), {
         json: true,
         headers: {
           'User-Agent': 'request'

@@ -1,10 +1,11 @@
 request = require('request')
 sw = require('stopword')
 Crawl = do ->
-  endpoint = 'https://query.wikidata.org/sparql?query='
+  
   config = {
-    limit: 1000,
-    lang: 'en'
+    "limit": 1000,
+    "lang": "en",
+    "endpoint": "https://query.wikidata.org/sparql?query="
   }
 
   # Helper function that returns array with only unique items
@@ -77,7 +78,7 @@ Crawl = do ->
     query = select + where + optional + '\n  FILTER(LANG(?description) = "' + config.lang + '") ' + label + '\n}' + groupby + '\nLIMIT '+ config.limit
     
     # query endpoint
-    request endpoint + encodeURIComponent(query), {
+    request config.endpoint + encodeURIComponent(query), {
       json: true
       headers: 'User-Agent': 'request'
     }, (err, res, body) ->
