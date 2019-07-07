@@ -8,7 +8,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
   sw = require('stopword');
 
   Crawl = function () {
-    var args, config, endpoint, err, retrieve, uniq;
+    var args, config, endpoint, err, removeStopwords, retrieve, uniq;
     endpoint = 'https://query.wikidata.org/sparql?query=';
     config = {
       limit: 1000,
@@ -39,6 +39,27 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           } else {
             return objs.push(item);
           }
+        }
+      });
+    }; // Helper function that removes stopwords from property in bindings array
+
+
+    removeStopwords = function removeStopwords(bindings, property, unique, delimiter) {
+      return bindings.forEach(function (item) {
+        var s;
+
+        if (item[property].value) {
+          s = sw.removeStopwords(item[property].value.match(/\b(\S+)\b/g), sw[config.lang]);
+
+          if (unique === true) {
+            s = uniq(s);
+          }
+
+          if (delimiter) {
+            s = s.join(delimiter);
+          }
+
+          return item[property].value = s;
         }
       });
     }; // Retrieve data from Wikidata
@@ -87,44 +108,12 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         config.properties.forEach(function (property, key) {
           if (property.stopword === true) {
-            return body.results.bindings.forEach(function (item) {
-              var s;
-
-              if (item[property.label].value) {
-                s = sw.removeStopwords(item[property.label].value.match(/\b(\S+)\b/g), sw[config.lang]);
-
-                if (property.unique === true) {
-                  s = uniq(s);
-                }
-
-                if (property.delimiter) {
-                  s = s.join(property.delimiter);
-                }
-
-                return item[property.label].value = s;
-              }
-            });
+            return removeStopwords(body.results.bindings, property.label, property.unique, property.delimiter);
           }
         }); // remove stopwords from description
 
         if (config.description.stopword === true) {
-          body.results.bindings.forEach(function (item) {
-            var s;
-
-            if (item.description.value) {
-              s = sw.removeStopwords(item.description.value.match(/\b(\S+)\b/g), sw[config.lang]);
-
-              if (config.description.unique === true) {
-                s = uniq(s);
-              }
-
-              if (config.description.delimiter) {
-                s = s.join(config.description.delimiter);
-              }
-
-              return item.description.value = s;
-            }
-          });
+          removeStopwords(body.results.bindings, "description", config.description.unique, config.description.delimiter);
         } // callback
 
 
