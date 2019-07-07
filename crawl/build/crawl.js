@@ -8,12 +8,30 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
   sw = require('stopword');
 
   Crawl = function () {
-    var args, config, err, removeStopwords, retrieve, uniq;
+    var args, config, err, flatten, removeStopwords, retrieve, uniq;
     config = {
       "limit": 1000,
       "lang": "en",
       "endpoint": "https://query.wikidata.org/sparql?query="
+    }; // Helper function that flattens json results
+
+    flatten = function flatten(item) {
+      var property, res;
+      res = [];
+
+      for (property in item) {
+        if (!(property === "item" || property === "label" || item[property].value === "")) {
+          if (_typeof(item[property].value) === 'object') {
+            res = res.concat(item[property].value);
+          } else {
+            res.push(item[property].value);
+          }
+        }
+      }
+
+      return res;
     }; // Helper function that returns array with only unique items
+
 
     uniq = function uniq(a) {
       var objs, prims;
@@ -104,6 +122,8 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           'User-Agent': 'request'
         }
       }, function (err, res, body) {
+        var item;
+
         if (err) {
           return console.log(err);
         } // remove stopwords from properties
@@ -117,6 +137,20 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
         if (config.description.stopword === true) {
           removeStopwords(body.results.bindings, config.description);
+        }
+
+        if (config.flatten === true) {
+          res = {};
+
+          for (item in body.results.bindings) {
+            if (config.unique === true) {
+              res[body.results.bindings[item].item.value] = uniq(flatten(body.results.bindings[item]));
+            } else {
+              res[body.results.bindings[item].item.value] = flatten(body.results.bindings[item]);
+            }
+          }
+
+          body.results = res;
         } // callback
 
 
@@ -133,7 +167,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
     if (args[0]) {
       try {
         retrieve(JSON.parse(args[0]), function (res) {
-          return console.log(JSON.stringify(res.body.results.bindings));
+          if (config.flatten === true) {
+            return console.log(JSON.stringify(res.body.results));
+          } else {
+            return console.log(JSON.stringify(res.body.results.bindings));
+          }
         });
       } catch (error) {
         err = error;

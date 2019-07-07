@@ -1,4 +1,4 @@
-/* example of query */
+/* example of query with unique flattened results */
 
 const crawl = require('../build/crawl.min.js');
 const fs = require('fs');
