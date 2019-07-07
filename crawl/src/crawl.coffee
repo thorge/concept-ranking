@@ -21,6 +21,17 @@ Crawl = do ->
       else
         if objs.indexOf(item) >= 0 then false else objs.push(item)
   
+  # Helper function that removes stopwords from property in bindings array
+  removeStopwords = (bindings, property, unique, delimiter) ->
+    bindings.forEach (item) ->
+      if item[property].value
+        s = sw.removeStopwords item[property].value.match(/\b(\S+)\b/g), sw[config.lang]
+        if unique is true
+          s = uniq(s)
+        if delimiter
+          s = s.join delimiter
+        item[property].value = s
+              
   # Retrieve data from Wikidata
   # Makes use of Mediawiki API Service for full text search.
   retrieve = (c, cb) ->
@@ -72,27 +83,16 @@ Crawl = do ->
     }, (err, res, body) ->
       if err
         return console.log(err)
+        
       # remove stopwords from properties
       config.properties.forEach (property, key) ->
         if property.stopword is true
-          body.results.bindings.forEach (item) ->
-            if item[property.label].value
-              s = sw.removeStopwords item[property.label].value.match(/\b(\S+)\b/g), sw[config.lang]
-              if property.unique is true
-                s = uniq(s)
-              if property.delimiter
-                s = s.join property.delimiter
-              item[property.label].value = s
+          removeStopwords(body.results.bindings, property.label, property.unique, property.delimiter)
+       
       # remove stopwords from description
       if config.description.stopword is true
-        body.results.bindings.forEach (item) ->
-          if item.description.value
-            s = sw.removeStopwords item.description.value.match(/\b(\S+)\b/g), sw[config.lang]
-            if config.description.unique is true
-              s = uniq(s)
-            if config.description.delimiter
-              s = s.join config.description.delimiter
-            item.description.value = s
+        removeStopwords(body.results.bindings, "description", config.description.unique, config.description.delimiter)
+       
       # callback
       cb { query: query, body: body }
       return
