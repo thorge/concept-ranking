@@ -25,13 +25,13 @@ Crawl = do ->
   # Helper function that removes stopwords from property in bindings array
   removeStopwords = (bindings, property) ->
     bindings.forEach (item) ->
-      if item[property].value
-        s = sw.removeStopwords item[property].value.match(/\b(\S+)\b/g), sw[config.lang]
+      if item[property.label].value
+        s = sw.removeStopwords item[property.label].value.match(/\b(\S+)\b/g), sw[config.lang]
         if property.unique is true
           s = uniq(s)
         if property.concat
           s = s.join property.delimiter
-        item[property].value = s
+        item[property.label].value = s
               
   # Retrieve data from Wikidata
   # Makes use of Mediawiki API Service for full text search.
@@ -45,11 +45,11 @@ Crawl = do ->
     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n
     SELECT DISTINCT ?item ?label ?description 
     """
-    optional = '\n  OPTIONAL{ ?item <http://schema.org/description> ?description . }'
+    optional = "\n  OPTIONAL{ ?item <http://schema.org/description> ?#{config.description.label} . }"
     label = """
     \n  SERVICE wikibase:label {
         bd:serviceParam wikibase:language "[AUTO_LANGUAGE],#{config.lang}".
-        ?Pdescription rdfs:label ?description . 
+        ?Pdescription rdfs:label ?#{config.description.label} . 
     """
     groupby = '\nGROUP BY ?item ?label ?description '
     config.properties.forEach (property, key) ->
@@ -89,7 +89,7 @@ Crawl = do ->
       # remove stopwords from properties
       config.properties.forEach (property, key) ->
         if property.stopword is true
-          removeStopwords(body.results.bindings, property.label)
+          removeStopwords(body.results.bindings, property)
        
       # remove stopwords from description
       if config.description.stopword is true
