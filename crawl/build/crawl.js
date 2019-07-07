@@ -8,7 +8,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
   sw = require('stopword');
 
   Crawl = function () {
-    var config, endpoint, retrieve, uniq;
+    var args, config, endpoint, err, retrieve, uniq;
     endpoint = 'https://query.wikidata.org/sparql?query=';
     config = {
       limit: 1000,
@@ -133,7 +133,23 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           body: body
         });
       });
-    };
+    }; // run from commandline
+
+
+    args = process.argv.slice(2);
+
+    if (args[0]) {
+      try {
+        retrieve(JSON.parse(args[0]), function (res) {
+          return console.log(JSON.stringify(res.body.results.bindings));
+        });
+      } catch (error) {
+        err = error;
+        console.log([{
+          "error": "Wrong input format."
+        }]);
+      }
+    }
 
     return {
       // return public functions
