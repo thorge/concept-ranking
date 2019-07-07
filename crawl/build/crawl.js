@@ -122,7 +122,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
           'User-Agent': 'request'
         }
       }, function (err, res, body) {
-        var item;
+        var i, item;
 
         if (err) {
           return console.log(err);
@@ -140,14 +140,21 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
         }
 
         if (config.flatten === true) {
-          res = {};
+          res = [];
 
           for (item in body.results.bindings) {
+            i = {
+              "label": body.results.bindings[item].label.value,
+              "item": body.results.bindings[item].item.value
+            };
+
             if (config.unique === true) {
-              res[body.results.bindings[item].item.value] = uniq(flatten(body.results.bindings[item]));
+              i.value = uniq(flatten(body.results.bindings[item]));
             } else {
-              res[body.results.bindings[item].item.value] = flatten(body.results.bindings[item]);
+              i.value = flatten(body.results.bindings[item]);
             }
+
+            res.push(i);
           }
 
           body.results = res;
