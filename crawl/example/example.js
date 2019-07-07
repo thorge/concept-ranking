@@ -5,21 +5,22 @@ const fs = require('fs');
 
 // build request
 const request = {
-  name: 'Christian Albrecht',
-  description: {
-    stopword: true,
-    delimiter: ','
+  "name": "Christian Albrecht",
+  "description": {
+    "stopword": true,
+    "delimiter": ","
   },
-  properties: [
-    { name: 'P1477', label: 'birthname'},
-    { name: 'P19', label: 'placeofbirth'},
-    { name: 'P20', label: 'placeofdeath'},
-    { name: 'P106', label: 'occupation', concat: true, delimiter: ',', stopword: true, unique: true},
-    { name: 'P108', label: 'employer', concat: true, delimiter: ',', stopword: true, unique: true},
-    { name: 'P463', label: 'memberof', concat: true, stopword: true, unique: true}
+  "properties": [
+    { "name": "P1477", "label": "birthname"},
+    { "name": "P19", "label": "placeofbirth"},
+    { "name": "P21", "label": "sex"},
+    { "name": "P20", "label": "placeofdeath"},
+    { "name": "P106", "label": "occupation", "concat": true, "delimiter": ",", "stopword": true, "unique": true},
+    { "name": "P108", "label": "employer", "concat": true, "delimiter": ",", "stopword": true, "unique": true},
+    { "name": "P463", "label": "memberof", "concat": true, "stopword": true, "unique": true}
   ],
-  limit: 1000,
-  lang: 'en'
+  "limit": 1000,
+  "lang": "de"
 }
 
 // fire request
