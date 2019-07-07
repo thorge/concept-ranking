@@ -7,6 +7,17 @@ Crawl = do ->
     "lang": "en",
     "endpoint": "https://query.wikidata.org/sparql?query="
   }
+  
+  # Helper function that flattens json results
+  flatten = (item) ->
+    res = []
+    for property of item
+      unless property is "item" or property is "label" or item[property].value is ""
+        if typeof item[property].value == 'object'
+          res = res.concat item[property].value
+        else
+          res.push item[property].value
+    res
 
   # Helper function that returns array with only unique items
   uniq = (a) ->
@@ -94,7 +105,16 @@ Crawl = do ->
       # remove stopwords from description
       if config.description.stopword is true
         removeStopwords(body.results.bindings, config.description)
-       
+      
+      if config.flatten is true
+        res = {}
+        for item of body.results.bindings
+          if config.unique is true
+            res[body.results.bindings[item].item.value] = uniq(flatten(body.results.bindings[item]))
+          else
+            res[body.results.bindings[item].item.value] = flatten(body.results.bindings[item])
+        body.results = res
+        
       # callback
       cb { query: query, body: body }
       return
@@ -105,7 +125,10 @@ Crawl = do ->
   if args[0]
     try
       retrieve JSON.parse(args[0]), (res) ->
-        console.log JSON.stringify(res.body.results.bindings)
+        if config.flatten is true
+          console.log JSON.stringify(res.body.results)
+        else
+          console.log JSON.stringify(res.body.results.bindings)
     catch err
       console.log ["msg": "Wrong input format.", "error": err]
       
