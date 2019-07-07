@@ -7,6 +7,7 @@ const fs = require('fs');
 const request = {
   "name": "Christian Albrecht",
   "description": {
+    "label": "description",
     "stopword": true,
     "delimiter": ","
   },
