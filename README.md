@@ -37,8 +37,8 @@ We created a nodejs application to query Wikidata. You can find the code in *cra
     |   +-- src/              /* the coffeescript source files */
     |   |   +-- crawl.coffee  /* application code */
     |   +-- Gruntfile.coffee  /* grunt task runner configuration */
+    |   +-- .babel.rc         /* babel configuration */
     |   +-- package.json      /* node package configuration */
-    |   +-- post.html
 
 #### Prerequisites
 **Debian/Ubuntu**: Please make sure, you have nodejs and npm installed:
