@@ -368,6 +368,16 @@ $ node build/crawl.js '{
 ]
 ```
 
+#### Backend
+
+You can also start a nodejs server from *backend* directory.
+
+```bash
+cd backend && npm install && npm run start
+```
+
+Then you can retrieve data like this: http://localhost:8081/api/retrieve/Max%20Planck
+
 ### 4. Context Comparison
 TODO
 
