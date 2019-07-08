@@ -21,7 +21,7 @@ What we have to do:
 TODO
 
 ### 2. Fetch Concept Candidates
-We fetch concept candidates by querying a knowledge base (here: Wikidata) for possible entities with the corresponding names, that we found in the NER step. Querying wikidata for a person by name the common way will most likely timeout, because of one minute execution time at sparql endpoint. Since wikidata has no indexed data directly available, but we can make use of the Mediawiki API Service that's available by SPARQL request to use it for full text search.
+We fetch concept candidates by querying a knowledge base (here: Wikidata) for possible entities with the corresponding names, that we found in the NER step. Querying wikidata for a person by name the common way will most likely timeout, because of one minute execution time at sparql endpoint. Wikidata has no indexed data directly available, but we can make use of the Mediawiki API Service that's also available by SPARQL request and use it for full text search.
 
 We created a nodejs application to query Wikidata. You can find the code in *crawl* directory:
 
@@ -32,10 +32,11 @@ We created a nodejs application to query Wikidata. You can find the code in *cra
     |   |   +-- crawl.js.map  /* sourcemap */
     |   |   +-- crawl.min.js  /* minified application js */
     |   +-- example/          /* javascript examples */
-    |   |   +-- example.js    /* simple query example */
+    |   |   +-- example.js    /* query example */
+    |   |   +-- example2.js   /* flattened query example */
     |   +-- src/              /* the coffeescript source files */
     |   |   +-- crawl.coffee  /* application code */
-    |   +-- Gruntfile.coffee  /* the configuration for grunt task runner */
+    |   +-- Gruntfile.coffee  /* grunt task runner configuration */
     |   +-- package.json      /* node package configuration */
     |   +-- post.html
 
@@ -107,7 +108,7 @@ crawl.retrieve(request, function(res) {
 
 You have the option to remove stopwords from properties and description text. Stopwords are removed corresponding to selected language. If you want to join the stopwords you may set a delimiter (same delimiter that's used for concatenating). By the way, if you choose to remove stopwords, resultsets for corresponding property are always concatenated before stopword removal. If you want to have unique results from stopword removal, you can by setting unique flag. 
 
-#### 3. Example 1
+#### Example 1 - Simple Query
 
 You can run the example from within the *example* directory by:
     
@@ -248,7 +249,7 @@ $ node build/crawl.js '{
 ]
 ```
 
-#### 3. Example 2 - Flattened results
+#### Example 2 - Flattened results
 
 Example 2 returns flattened unique values for every concept found. You can run the example 2 from within the *example* directory by:
     
