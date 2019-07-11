@@ -106,6 +106,10 @@ if __name__ == '__main__':
     file1 = open(file_name + '.txt',"w") 
     file1.writelines(text)
     file1.close()
+    sys.stdout.flush()
+    print("jhvfnvifj")
+    sys.stdout.flush()
+    
 
 
 

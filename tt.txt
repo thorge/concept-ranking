@@ -1,0 +1,1386 @@
+TextTruth: An Unsupervised Approach to Discover Trustworthy
+
+Information from Multi-Sourced Text Data
+Hengtong Zhang1, Yaliang Li2, Fenglong Ma1, Jing Gao1, Lu Su1
+
+1SUNY Buffalo, Buffalo, NY USA
+
+2Tencent Medical AI Lab, Palo Alto, CA USA
+
+{hengtong, fenglong, jing, lusu}@buffalo.edu , yaliangli@tencent.com
+
+ABSTRACT
+Truth discovery has attracted increasingly more attention due to its
+ability to distill trustworthy information from noisy multi-sourced
+data without any supervision. However, most existing truth discov-
+ery methods are designed for structured data, and cannot meet the
+strong need to extract trustworthy information from raw text data
+as text data has its unique characteristics. The major challenges of
+inferring true information on text data stem from the multifacto-
+rial property of text answers (i.e., an answer may contain multiple
+key factors) and the diversity of word usages (i.e., different words
+may have the same semantic meaning). To tackle these challenges,
+in this paper, we propose a novel truth discovery method, named
+“TextTruth”, which jointly groups the keywords extracted from the
+answers of a specific question into multiple interpretable factors,
+and infers the trustworthiness of both answer factors and answer
+providers. After that, the answers to each question can be ranked
+based on the estimated trustworthiness of factors. The proposed
+method works in an unsupervised manner, and thus can be applied
+to various application scenarios that involve text data. Experiments
+on three real-world datasets show that the proposed TextTruth
+model can accurately select trustworthy answers, even when these
+answers are formed by multiple factors.
+
+CCS CONCEPTS
+• Information systems → Data mining;
+
+KEYWORDS
+Truth discovery; unsupervised learning; text mining
+
+ACM Reference Format:
+Hengtong Zhang, Yaliang Li, Fenglong Ma, Jing Gao, Lu Su. 2018. TextTruth:
+An Unsupervised Approach to Discover Trustworthy Information from
+Multi-Sourced Text Data. In KDD ’18: The 24th ACM SIGKDD International
+Conference on Knowledge Discovery & Data Mining, August 19–23, 2018,
+London, United Kingdom. ACM, New York, NY, USA, 9 pages. https://doi.
+org/10.1145/3219819.3219977
+
+Permission to make digital or hard copies of all or part of this work for personal or
+classroom use is granted without fee provided that copies are not made or distributed
+for profit or commercial advantage and that copies bear this notice and the full citation
+on the first page. Copyrights for components of this work owned by others than ACM
+must be honored. Abstracting with credit is permitted. To copy otherwise, or republish,
+to post on servers or to redistribute to lists, requires prior specific permission and/or a
+fee. Request permissions from permissions@acm.org.
+KDD ’18, August 19–23, 2018, London, United Kingdom
+© 2018 Association for Computing Machinery.
+ACM ISBN 978-1-4503-5552-0/18/08...$15.00
+https://doi.org/10.1145/3219819.3219977
+
+1 INTRODUCTION
+In the big data era, tremendous data can be accessed on various
+online platforms, such as Amazon Mechanical Turk, Stack Exchange
+and Yahoo Answers. However, such multi-sourced data are usually
+contributed by non-expert online users, thus there may exist errors
+or even conflicts in the data. Therefore, how to automatically in-
+fer trustworthy information (i.e., the truths) from such noisy and
+conflicting data is a challenging problem.
+
+To address this challenge, truth discovery methods have been
+proposed [4, 5, 8, 12–15, 19–21, 26, 27, 29, 36, 38, 43], which aim to
+estimate trustworthy information from conflicting data by consider-
+ing user reliability degrees. Truth discovery approaches follow two
+fundamental principles: (1) If a user provides much trustworthy
+information or true answers, his/her reliability is high; (2) If an
+answer is supported by many reliable users, this answer is more
+likely to be true. Though yielding reasonably good performance,
+most existing truth discovery methods are designed for structured
+data, and are difficult to be directly applied to text data, which
+are unstructured and noisy. This significantly narrows the applica-
+tion domain of these truth discovery methods, as a large ratio of
+the multi-sourced data are text. Actually, there are several unique
+characteristics of natural language that hinder the existing truth
+discovery methods from being successfully applied to text data.
+
+Figure 1 gives an illustration of these two characteristics of text
+data. First, the answer to a factoid question 1 may be multifactorial,
+and it is usually hard for a given text answer to cover all the fac-
+tors. For the question ‘What are the symptoms of flu?’, the correct
+answer should contain the following factors: fever, chills, cough,
+nasal symptom, ache, and fatigue. Even if the answer provided by a
+user covers two factors, such as cough and chills, the existing truth
+discovery methods may determine this answer to be totally wrong
+and assign a low reliability degree to this user. This is because these
+methods treat the whole answer as an integrated unit. However,
+if we take the fine-grained answer factors into consideration, the
+answer provided by this user is partially correct, which implies
+that we should give some credits to the user by increasing his/her
+reliability degree. Thus, how to identify partially correct answers
+and model factors of text answers is critical for the task of truth
+discovery on text data.
+
+The second characteristic of text data is the diversity of word
+usages. Answers provided by online users may convey a very simi-
+lar meaning with different keywords. For example, users may use
+words such as tired or exhausted to describe the symptom of fatigue.
+However, existing truth discovery approaches may treat them as
+
+1Note: This paper merely focuses on finding trustworthy answers for factoid ques-
+tions. Factoid questions are defined as questions that can be answered with simple
+facts expressed in short text answers.[11]
+
+Research Track PaperKDD 2018, August 19‒23, 2018, London, United Kingdom2729 Figure 1: An Illustration of questions, answers, answer factors and keywords. The left diagram illustrates the relationship
+among questions, answers and users. The middle diagram shows an example of keywords and their answer factors. The right
+table demonstrates the factors in the answers of user 1 and user 4, respectively.
+
+totally different answers. Thus, it is of great importance to model
+the diversity among answers in the text data when inferring trust-
+worthy information.
+
+In order to tackle the aforementioned challenges for inferring
+trustworthy information from text data, in this paper, we propose a
+model named “TextTruth”, which takes the keywords in each answer
+as inputs and outputs a ranking for the answer candidates based on
+their trustworthiness. Specifically, we first transform the keywords
+in text answers into pre-trained computable vector representations.
+Due to the fact that an answer may contain multiple factors, the
+“answer-level” or coarse-grained representations may not be able
+to capture the partially correct answers. Thus, we need to convert
+the whole answer into fine-grained factors. Then, we model the
+diversity of answers by clustering the keywords with similar se-
+mantic meanings. By doing so, we can estimate the trustworthiness
+of each answer factor instead of the whole answer and infer the
+correctness of each factor in the answer.
+
+Compared with existing truth discovery methods, the advan-
+tages of the proposed TextTruth are two-fold: First, by evaluating
+the trustworthiness of each answer factor, the proposed model can
+naturally handle the partial correctness phenomenon of text an-
+swers. Second, by modeling answer keywords in the form of vector
+representations, we can make the factors within the answers com-
+putable such that the ubiquitous usage diversity issue on text data
+is addressed.
+
+Experiments on three real-world datasets demonstrate that the
+proposed TextTruth model can improve the performance of finding
+trustworthy answers in text data compared with the state-of-the-art
+truth discovery approaches. We also provide case studies to demon-
+strate that the proposed method can provide interpretable labels
+for answer factors in real-world answers. The major contributions
+of this paper are as follows:
+
+• We identify the unique challenges of discovering true infor-
+mation from multi-sourced text data, i.e., partially correct
+answers and word usage diversity.
+• We propose a probabilistic model called TextTruth, which
+can extract fine-grained factors from each answer. Such de-
+sign can naturally handle the partial correctness of answers.
+
+• The proposed TextTruth model can jointly learn semantic
+clusters (i.e., factors) for answer keywords and infer the
+reliability of each user as well as the trustworthiness of each
+answer factor. The answers can thus be ranked based on the
+trustworthiness of their factors.
+• We empirically show that the proposed model outperforms
+the state-of-the-art truth discovery methods for the task of
+answer ranking on three real-world datasets.
+
+The rest of the paper is organized as follows: Section 2 is a
+survey of related work. In Section 3, we formally define the problem
+discussed in this paper. Then we describe the proposed TextTruth
+model, and provide a method for parameter estimation in Section 4.
+In Section 5, we conduct a series of experiments and case studies
+on real-world datasets. We conclude the paper in Section 6.
+
+2 RELATED WORK
+We survey the related work from three aspects: truth discovery,
+community question answering and answer selection.
+
+Truth Discovery: The research topic of truth discovery, which
+aims to identify trustworthy information from conflicting multi-
+source data, has become a hot topic in recent years. A large variety
+of methods have been proposed to handle various scenarios such as:
+different data types [5, 13, 42, 44], source dependencies [5, 15, 43],
+fine-grained source reliability [20], entity/object dependency [22]
+and long-tail data [12, 39]. Among them, there are two truth discov-
+ery scenarios that are related to the problem studied in this paper.
+Firstly, as previously discussed, there may exist multiple factors in
+a text answer. Such setting could be related to the problem of multi-
+truth discovery [35, 44]. However, there are some significant differ-
+ences. In [35, 44], the input from each user is structured categorical
+data. Hence, the methods proposed in these two papers cannot be
+directly extended to unstructured text data, where answers may be
+partially correct and contain diverse word expressions. Secondly,
+there is also some existing work that focuses on unstructured text
+inputs. For example, [6] specifies a confidence-aware source relia-
+bility estimation approach, which takes the SVO triples extracted
+from webpages as inputs. However, the ultimate goal of that paper
+is to reduce conflicting information in the process of knowledge
+
+Research Track PaperKDD 2018, August 19‒23, 2018, London, United Kingdom2730 base construction, which is different from our paper. In [32, 33], the
+authors transform twitter texts into structured data and apply truth
+discovery methods to find trustworthy tweets. However, in [32, 33],
+the semantic meanings of texts are not taken into consideration
+during the truth discovery process. In [16, 17], the authors study
+the task of verifying the truthfulness of fact statements utilizing
+Web sources. These work and this paper both conduct trustworthi-
+ness analysis in the proposed methods. However, the truthfulness
+verification task is different from ours, and the methods in [16, 17]
+assume the access to external supporting information that is not
+required by our proposed method.
+
+To the best of our knowledge, the only previous work that incor-
+porates semantic meanings into the truth discovery procedure is
+[18]. However, this work can only handle single word answers and
+the problem settings are different from this paper which handles
+multi-factor answers.
+
+Collaborative Question Answering: This paper is also related
+to the problem of collaborative question answering (CQA). The ex-
+isting work in this field can be categorized into two groups. The first
+group of work [3, 10] explicitly extracts features from crowdsourced
+answers and transforms the answer quality estimation task into
+classification problems or ranking problems. However, this line of
+approaches usually require high-quality training sets and a variety
+of useful features to train the model. Such information, unfortu-
+nately, is not always available in real-world applications. Another
+group of methods [40, 45] transform the problem of answer quality
+estimation into an expert finding problem. These methods infer the
+quality of answers based on the answer providers. However, these
+methods require external information on either asker-answerer in-
+teractions or explicit features like voting information. The different
+problem settings and solutions naturally distinguish these work
+from this paper.
+
+Answer Selection: Answer selection, which aims to choose
+the most suitable answer from a set of candidate sentences, is an
+important task in the field of question answering (QA). Traditional
+answer selection approaches are mainly based on lexical features
+[37, 41]. Neural networks based models are proposed to represent
+the meaning of a sentence in a vector space and then compare the
+question and answer candidates in this hidden space [7, 34], and
+have shown great improvement in answer selection. In [28, 31],
+attention mechanism is introduced into answer selection models
+to enhance the sentence representation learning. However, these
+models are all supervised. The model proposed in this paper is
+different from these approaches, as it does not require labeled data
+for training.
+
+3 PROBLEM FORMULATION
+In this paper, we consider a general truth discovery scenario for
+factoid text questions and answers. Before introducing the problem
+formulation, we first define some basic terminologies that will be
+used in the rest of the paper:
+
+Definition 3.1 (Question). A question q contains Nq words and
+
+can be answered by users.
+
+Definition 3.2 (Answer). An answer given by user u to question q
+
+is denoted as aqu.
+
+Definition 3.3 (Answer Keyword). Answer keywords are domain-
+specific content words / phrases in answers. The m-th answer key-
+word of the answer given by user u to question q is denoted as
+xqum.
+
+Definition 3.4 (Answer Factor). Answer factors are the key points
+of the answers, which are represented as clusters of answer keywords.
+The k-th answer factor in the answers to question q is denoted as
+cqk.
+
+For each question, there can be different answers provided by
+different users. These answers may consist of complex sentences
+with multiple factors and can be partially correct. This setting can
+support a broad range of text data. Formally, the problem discussed
+in this paper can be defined as:
+
+1 and a set of answers {aqu}Q,U
+
+Definition 3.5 (Problem Definition). Given a set of users {u}U1 ,
+a set of questions {q}Q
+q,u=1,1, where
+U denotes the number of users and Q stands for the number of
+questions. The goal of this paper is to extract highly-trustworthy
+answers and highly-trustworthy key factors in answers for each
+question.
+
+4 METHODOLOGY
+In this section, we first offer an overview of the proposed TextTruth
+model, and then explain in detail each component of it.
+
+4.1 Overview
+When applying truth discovery methods to find the trustworthy
+answers to complex natural language questions, semantic correla-
+tions among answers should be taken into consideration, so that
+user reliability can be accurately estimated. However, learning ac-
+curate vector representations for the whole answers is difficult
+especially when the context corpus of these answer paragraphs
+is not sufficiently large. Moreover, due to the complexity of natu-
+ral language, the meaning of an answer is too complicated to be
+represented by a single vector. To tackle such challenges, we rely
+on more fine-grained semantic units (i.e., answer factors) in each
+answer to determine the trustworthiness of each answer.
+
+In this paper, for each question, we first extract the keywords
+in each answer and learn their vector representations. Then we
+cluster these word/phrase-level keywords into semantic clusters
+(i.e., factors). These factors represent all the possible key points
+in the answers to a question and can be used to determine the
+trustworthiness of an answer. For the keywords within each cluster,
+as they share very similar semantic meanings, their trustworthiness
+should be almost the same. In addition, users may have different
+reliabilities, which can be reflected in the answers they provided.
+Based on the above ideas, we propose a two-step method to esti-
+mate the trustworthiness of each answer. In the first step, we specify
+a probabilistic model to model the generation of keywords with user
+reliabilities taken into consideration in Section 4.2. The generative
+model, which consists of three major components, jointly learns
+the answer factors and their truth label. The generative model
+first generates a mixture of answer factors and their semantic pa-
+rameters. After that, the model generates two-fold user reliability
+variables, which model the comprehensiveness and accuracy of
+answer factors provided by a specific user. These two variables
+
+Research Track PaperKDD 2018, August 19‒23, 2018, London, United Kingdom2731 Research Track Paper
+
+KDD 2018, August 19‒23, 2018, London, Unfited Kfingdom
+
+Forthek-thanswerffactorunderquestfionq,wemodelfitstrust-
+worthfinessvfiaabfinarytruthlabeltqk.Specfifically,themodelfirst
+generatestheprfiortruthprobabfilfityγqk.Itdetermfinestheprfior
+dfistrfibutfionoffhowlfikelyeachffactorfistobetrue,ffromaBeta
+dfistrfibutfionwfithhyper-parameterα(a)
+
+1 andα(a)
+0 :
+1 ,α(a)
+
+0 ).
+
+γqk∼Beta(α(a)
+
+(2)
+
+ThenthetruthlabeltqkfisgeneratedffromaBernoullfidfistrfibutfion
+wfithparameterγqk:
+
+tqk∼Bernoullfi(γqk).
+
+(3)
+
+Ffinally,tomodelthesemantficcharacterfistficoffeachanswerffactor,
+wedefinethecentrofidparameterµqk andconcentrateparame-
+terκqkoffvMFdfistrfibutfionsffromfitsconjugateprfiordfistrfibutfion
+Φ(µqk,κqk;m0,R0,c)[25],fi.e.:
+
+µqk,κqk∼Φ(µqk,κqk;m0,R0,c),
+
+(4)
+
+whereΦ(µqk,κqk;m0,R0,c)fisdefinedas:
+
+Φ(µqk,κqk;m0,R0,c)∝{CD(κqk)}cexp(κqkR0mT
+
+0µqk).
+
+Here,CD(κ)= κD/2−1
+ID/2−1(κ),andID/2−1(·)fisthemodfifiedBesselffunc-
+tfionoffthefirstkfind.Inpractfice,theremaybeffewanswersthat
+aretotallyfirrelevanttothequestfion.Sfincetheanswerffactorsfin
+firrelevantanswersareusuallysupportedbyveryffewusers,they
+wfillnotberegardedastrustworthy.
+II.UserRelfiabfilfity Modelfing:Therelfiabfilfityoffeachuserfisfin-
+fferredaccordfingtotheanswerstheyprovfide.Asafforementfioned,
+theansweroffauserumaymerelycoverpartoffthetrustworthy
+answerffactors,andatthesametfimemayconsfistoffuntrustworthy
+answerffactors.Forfinstance,someusersmayonlyprovfidetheffac-
+torsthattheyareveryconfidentoff.Onthecontrary,otherusers
+maycoverabroadcollectfionoffanswerffactorswfithdfifferenttrust-
+worthfinessesfinthefiranswers.Thfisnaturallymotfivatesustousea
+two-ffoldscorelfike[44]tomodeltherelfiabfilfityoffauser.
+
+Supposeweknowalltheanswerffactorsandthefirtruthlabels
+finadvance,fforallthequestfionsandthefiranswers,weuseTPu
+andFPutodenotethenumberofftrustworthyanduntrustworthy
+answerffactorsthatarecoveredbytheanswersffromuseru(fi.e.,
+thenumberofftrueposfitfiveandffalseposfitfiveffactors),respectfively.
+Sfimfilarly,weuseFNuandTNutodenotethenumberofftrustworthy
+anduntrustworthyanswerffactorsthatarenotcoveredbythe
+answersffromuseru(fi.e.,thenumberoffffalsenegatfiveandtrue
+negatfiveffactors),respectfively.Basedonthesestatfistfics,wecan
+fintufitfivelyusetheffalseposfitfiverate(definedas: FPu
+),and
+thetrueposfitfiverate(definedas: TPu
+u’srelfiabfilfity.
+
+)toffullycharacterfize
+
+TPu+FNu
+
+FPu+TNu
+
+Let’sresumethedfiscussfionofftheproposedmodel.Durfingthe
+generatfiveprocess,theanswerffactorsandthefirtruthlabelsare
+notknownfinadvance.Inspfiredby[44],wealsodefinetwo-ffold
+userrelfiabfilfityvarfiablesϕ0
+u to modeltheffalseposfitfive
+rateandthetrueposfitfiverateoffffactorsthatarecoveredbythe
+answersoffuseru.Specfifically,fforeachuseru,wegenerateϕ0
+uand
+ϕ1
+uffromtwoBetadfistrfibutfionswfithhyper-parameters(α0,1,α0,0)
+and(α1,1,α1,0),respectfively.Here,α0,1andα0,0aretheprfiorffalse
+posfitfivecountandtruenegatfivecount,respectfively.Sfimfilarly,α1,
+1
+
+u andϕ1
+
+Ffigure2:PlatenotatfionffortheproposedTextTruth Model.
+Inthegraph,whfitecfirclesdenotethelatentvarfiables,gray
+cfirclesstandffortheobservatfions,whfileothersstandfforthe
+hyper-parameters.
+
+captureawholespectrumofftheuserrelfiabfilfity.Ffinally,themodel
+selectsananswerffactorbasedonthesemantfics,thetrustworthfi-
+nessofftheanswerffactoraswellastherelfiabfilfityofftheuserthat
+provfidestheanswer,andgeneratethekeywordembeddfingvector
+vfiaavonMfises-Ffisher(vMF)dfistrfibutfion.ThevMFdfistrfibutfionfis
+centralfizedatthesemantficcentrofidoffthatanswerffactor.Thfisway,
+thedesfignoffanswerffactoranduserrelfiabfilfitytakesthemultfiffac-
+torfialcharacterfistficsoffanswersfintoconsfideratfion.Meanwhfilethe
+keywordembeddfingvectorgeneratfionalsocapturesthedfiversfity
+offwordusages.Thesedesfignsmakethemodelcapableoffcapturfing
+theunfiquecharacterfistficsofftextdata.Insectfion4.3,wedesfigna
+strafightfforwardscorfingmechanfismtoevaluatethetrustworthfiness
+scoreoffeachanswer. Weprovfidetheparameterestfimatfionoffthe
+proposedmethodfinSectfion4.4.
+
+4.2 Generatfive Model
+Wedevelopaprobabfilfistficmodeltojofintlylearntheanswerffactors
+andthetruthlabelsoffeachanswerffactorfforeveryquestfion.For
+anansweraqu,weextractdomafin-specfificanswerkeywordsand
+getthefirnormalfized2vectorrepresentatfions[23].Thesetoffallthe
+vectorrepresentatfionsfisdenotedas{vqum},whfichalsoservesas
+theobservatfionofftheprobabfilfistficmodel.Ffigure2showstheplate
+notatfionofftheproposedmodel.Thegeneratfivemodelconsfistsoff
+threemajorcomponents,whficharelfistedasffollows:
+I.AnswerFactor Modelfing:Themodelfirstgeneratethemfix-
+tureoffffactorsaccordfingtotheDfirfichletdfistrfibutfion,whfichfis
+commonlyusedtogeneratemfixturemodels.Formally,themfixture
+dfistrfibutfionπqfisgeneratedas:
+
+πq∼Dfirfichlet(β).
+
+(1)
+
+Here,βfisaKq-dfimensfionalvector,whereKqdenotesthenumber
+offffactorsfintheanswerstoquestfionq.
+
+2Thenormalfizedvectoroffvfisgfivenbyˆv= v
+
+|v|,where|v|fisthel2-normoffv.
+
+2732 
+
+and α1,0 stand for the prior true positive count and the false negative
+count of each source, respectively. Formally:
+
+u ∼ Beta(α0,1, α0,0)
+0
+u ∼ Beta(α1,1, α1,0)
+1
+
+ϕ
+
+ϕ
+
+(False Positive Rate)
+(True Positive Rate).
+
+(5)
+
+III. Observation Modeling: As aforementioned, we use the vector
+representations of keywords as observations. For the m-th word
+representation from user u for question q, we specify the following
+generation process.
+Firstly, we define a binary indicator yu,qk, which denotes whether
+the k-th factor of the answers to question q should be covered by
+user u, based on the reliability of u. For question q, if its truth label
+tqk = 1, the probability of user u covering the k-th factor in its
+answer follows a Bernoulli distribution with reliability parameter
+1
+u. Otherwise, if its truth label tqk = 0, the probability follows a
+ϕ
+0
+Bernoulli distribution with reliability parameter ϕ
+u. Formally, this
+process can be written as:
+
+yu,qk ∼ Bernoulli(ϕ
+yu,qk ∼ Bernoulli(ϕ
+
+u)
+0
+u)
+1
+
+If tqk = 0,
+If tqk = 1.
+
+(6)
+
+To this point, we have determined the set of answer factors that
+should be covered by the answer aqu, with the reliability of u taken
+into consideration.
+Then, for the m-th keyword in the answer aqu, its factor label
+
+zqum is drawn from a probability density function defined as:
+
+P(zqum = k|πq , yu,qk) ∝
+
+πqk
+0
+
+if yu,qk = 1,
+if yu,qk = 0.
+
+(7)
+
+The density function jointly considers the answer factor mixture
+distribution and the set of binary indicators yu,q·. This means that
+both semantics and user reliabilities are used to determine the factor
+label of a specific answer keyword.
+
+With the factor labels determined, the model samples keywords
+vectors that describe the semantic meaning of its corresponding
+factor. Note that this procedure should not involve the reliability of a
+user. The vector representation of a keyword (i.e. vqum) is randomly
+sampled from a vMF distribution with parameter µqk , κqk:
+
+vqum ∼ vMF(µqk , κqk).
+
+(8)
+Specifically, for a D-dimensional unit semantic vector v that
+follows vMF distribution, its probability density function is given
+by:
+
+qk vqum).
+
+p(vqum|µqk , κqk) = CD(κqk) exp(κqk µT
+
+(9)
+The vMF distribution has two parameters: the mean direction
+µqk and the concentration parameter κqk(κqk > 0). The distri-
+bution of vqum on the unit sphere concentrates around the mean
+direction µqk, and is more concentrated if κqk is larger. In our
+scenario, the mean vector µ acts as a semantic focus on the unit
+sphere, and produces relevant semantic embeddings around it. The
+superiority of the vMF distribution over other continuous distri-
+butions (e.g., Gaussian) for modeling textual embeddings has also
+been shown in the field of clustering [1] and topic modeling [9].
+The overall generative process is summarized in Algorithm 1.
+
+(cid:40)
+
+Algorithm 1: Generative Process of TextTruth
+for each question q do
+
+Draw mixture πq ∼ Dirichlet(β);
+for each answer factor k do
+Draw centroid and concentration:
+µqk , κqk ∼ Φ(m0, R0, c);
+(a)
+Draw truth parameter: γqk ∼ Beta(α
+0 , α
+Draw a truth label: tqk ∼ Bernoulli(γqk);
+
+(a)
+1 );
+
+end
+
+end
+for each user u do
+
+end
+for each answer aqu do
+
+Draw: ϕ
+
+u ∼ Beta(α0,1, α0,0),
+0
+
+u ∼ Beta(α1,1, α1,0);
+1
+
+ϕ
+
+for each answer factor k do
+
+Draw binary label: yu,qk ∼ Bernoulli(ϕ
+
+u );
+tqk
+
+end
+for each keyword m do
+
+Draw a answer factor label: P(zqum = k|π , yu,qk);
+Draw keyword embedding:
+vqum ∼ vMF(µqzqum , κqzqum);
+
+end
+
+end
+
+Kq
+
+k =1
+
+4.3 Trustworthy-Aware Answer Scoring
+Intuitively, the trustworthiness of an answer should be evaluated by
+the volume of correct information it provides. Hence, we propose a
+straightforward scoring mechanism to evaluate the trustworthiness
+score of each answer. Given the inferred truth labels for each answer
+factor of question q, we score the answers according to the number
+of answer keywords in the answer aqu that are related to the factor
+with truth label tqk = 1, i.e.:
+
+scorequ =
+
+Nu,qk I(tqk = 1),
+
+(10)
+
+where Kq is the number of answer factors for question q, Nu,qk
+denotes the number of keywords that are provided by user u and are
+clustered into factor k. I(tqk = 1) = 1 if tqk = 1, and I(tqk = 1) = 0
+if tqk = 0. Note that there are many alternative ways of designing
+scoring functions.
+
+4.4 Model Fitting
+In this section, we present the approach to estimating the latent
+variables and the user reliability parameters.
+Latent Variable Estimation: We use MCMC method to infer the
+latent variables t, z, y and κ. As one can see, the values of y and z
+have a large impact on the final results, and they may be sensitive
+to the initialization. Therefore, we make an approximation in latent
+variable estimation to make the process stable. The detailed steps
+are specified in the following paragraphs.
+
+First, using conjugate distributions, we are able to analytically
+integrate out the model parameters and only sample the cluster
+
+Research Track PaperKDD 2018, August 19‒23, 2018, London, United Kingdom2733 Research Track Paper
+
+KDD 2018, August 19‒23, 2018, London, Unfited Kfingdom
+
+assfignmentvarfiablez.Thfisfisdoneasffollows:
+
+P(zqum=k|zq,¬um,β,m0,R0,c)
+
+∝P(zqum=k|zq,¬um,β)
+
+(11)
+
+×P(vqum|vq,¬um,zqum=k,zq,¬um,m0,R0,c),
+
+wherevq,¬umstandsfforthesetoffallthekeywordsfintheanswers
+fforquestfionq,exceptthem-thkeywordffromuseru.
+
+ThenwecanderfivetheexpressfionsfforthetwotermsfinEq.(11).
+
+ThefirsttermP(zqum=k|zq,¬um,β)canbewrfittenas:
+
+P(zqum=k|zq,¬um,β)∝Nqk¬um+βk,
+
+(12)
+
+whereNqk,¬umdenotesthenumberoffanswerkeywordsunder
+thek-thffactoroffquestfionqexceptcurrentkeywordvqum.The
+secondtermfinEq.(11)fissfimfilartothefformoffvMFMfixtureModel,
+whfichcanbewrfittenas:
+
+P(vqum|vq,¬um,zqum=k,zq,¬um,m0,R0,c)
+CD(κqk)CD(||κqk(R0m0+vqk¬um)||2)
+,
+
+∝
+
+CD(||κqk(R0m0+vqk)||2)
+
+(13)
+
+wherevqkdenotesthesumoffallthevectorrepresentatfionsoff
+keywordsfinffactorkfforquestfionq.Theconcentratfionparameters
+κqkaresampledffromtheffollowfingdfistrfibutfion:
+
+P(κqk|κq¬k,m0,R0,c)∝
+
+(CD(κqk))c+Nqk
+
+CD(κqk||R0m0+vqk||2)
+
+. (14)
+
+Thecondfitfionaldfistrfibutfionoffκqkfisagafinnotoffastandard
+fform, weuseastepoff MetropolfisHastfingsamplfing(wfithlog-
+normalproposaldfistrfibutfion)tosampleκqk.Tothfispofint,weget
+theffullexpressfionoffEq.(11).Inthecfircumstancewhenthemodel
+fittfingeficfiencybecomesaconcern,thesamplfingprocessspecfified
+byEq.(11)canbeapproxfimatedvfiathemethodspecfifiedfin[30],
+whfichalsoproducessatfisffactoryresults.
+
+Here,wemakeanapproxfimatfionbyremovfingthefimpactoffy
+fintermsoffdetermfinfingthevaluez.Fortheanswerprovfidedby
+userufforquestfionsq,yu,qkfisdetermfinedvfia:
+
+yu,qk=
+
+0 Iff msatfisfieszqum=k,
+1 Otherwfise.
+
+(15)
+
+Ffinally,wemoveontosamplethetruthlabelfforeachanswer
+ffactorundereachquestfiontqkvfiatheffollowfingposterfiordfistrfibu-
+tfion:
+
+P(tqk=x|tq,¬k,zq,yq,α0,0,α0,1,α1,0,α1,1,α(a)
+
+0 ,α(a)
+1 )
+
+∝α(a)
+
+x
+
+u∈Uq
+
+αx,yu,qk +nu,x,yu,qk
+
+αx,0+αx,1+nu,x,0+nu,x,1
+
+,
+
+(16)
+
+whereUqfisthesetoffusersthatprovfideanswerfforquestfionq.Here,
+x∈{0,1}.nu,0,0,nu,0,1,nu,1,0andnu,1,1denotethenumberoff
+truenegatfive,ffalseposfitfive,ffalsenegatfiveandtrueposfitfiveffactors
+provfidedbyuseru,respectfively.
+UserRelfiabfilfityEstfimatfion: Wfitht,y,κandzdetermfined,we
+areabletoobtafintheclosed-fformsolutfionfforϕ0
+ubysettfing
+thepartfialderfivatfivesoffthenegatfivelog-lfikelfihoodrespectfiveto
+ϕ0
+uandϕ1
+
+utozero:
+
+uandϕ1
+
+ϕ0
+u=
+
+α0,1+nu,0,1
+
+α0,0+α0,1+nu,0,1+nu,0,0
+
+,
+
+ϕ1
+u=
+
+α1,1+nu,1,1
+
+α1,0+α1,1+nu,1,0+nu,1,1
+
+,
+
+(18)
+
+wherenu,0,0,nu,0,1,nu,1,0andnu,1,1areuserrelfiabfilfitystatfis-
+tfics,whfichdenotethenumberofftruenegatfive,ffalseposfitfive,ffalse
+negatfiveandtrueposfitfiveffactorsprovfidedbyuseru,respectfively.
+Moreover,thesestatfistficsalsoallowustocalculateotheruserrelfia-
+bfilfitymetrfics,e.g.,precfisfionscoreoffauser:
+α1,1+nu,1,1
+
+precu=
+
+α0,1+α1,1+nu,0,1+nu,1,1
+
+.
+
+(19)
+
+Thfisscorefisalsousedfintheexperfimentsectfiontovalfidatethe
+estfimateduserrelfiabfilfity.
+
+5 EXPERIMENTS
+Inthfissectfion,weempfirficallyvalfidatetheperfformanceoffthepro-
+posedmethodffromtheffollowfingaspects:Ffirstly,wecomparethe
+perfformanceofftheproposedmethodwfiththestate-off-the-arttruth
+dfiscoverymethodsaswellasacoupleoffretrfievalbasedschemes
+todemonstratetheadvantageoffutfilfizfingfine-grafinedsemantfic
+unfitsoffanswersfforbetteranswertrustworthfinessestfimatfion.Aff-
+terthat,weprovfideacasestudytoshowthattheresultsproduced
+bytheproposedmethodarehfighlyfinterpretable.Ffinally,weval-
+fidatetheestfimateduserrelfiabfilfitfieswfithgroundtruthtoffurther
+provethattheproposedmethodcanmakeagoodestfimatfionoff
+userrelfiabfilfitfies.
+
+5.1 Datasets
+SuperUserDataset&ServerFaultDataset:Thesetwodatasets
+arecollectedffromthecommunfityquestfionanswerfing(CQA)web-
+sfitesSuperUser.comandServerFault.com,respectfively.Thesetwo
+websfitesaremafinlyffocusedonthequestfionsaboutgeneraldafily
+computerusagesandserveradmfinfistratfion,respectfively.Thetask
+onthesedatasetsfistoextractthe mosttrustworthyanswerto
+eachquestfion. Weusetheanswers’votesffromSuperUser.comand
+ServerFault.comasthegroundtruthsfforevaluatfion.
+StudentExamDataset[24]:Thfisdatasetfiscollectedffromfintro-
+ductorycomputerscfienceassfignmentswfithanswersprovfidedbya
+classoffundergraduatestudentsfintheUnfiversfityoffNorthTexas.
+30studentssubmfitanswerstotheseassfignments.Foreachassfign-
+ment,thestudents’answersarecollectedvfiaanonlfinelearnfing
+envfironment.ThetaskonthfisdatasetfistoextractTop-K(Kfisset
+to1-10finthfispaper)trustworthystudentanswersfforeachques-
+tfion.Thegroundtruthanswersaregfivenbythefinstructors.Allthe
+answersarefindependentlygradedbytwohumanjudges,usfingan
+fintegerscaleffrom0(completelyfincorrect)to5(perffectanswer).
+ThestatfistficsoffthesethreedatasetsareshownfinTable1.
+
+Table1:DataStatfistfics.
+
+SuperUser  ServerFault  StudentExam
+
+Item
+#offQuestfions  3379 
+#offUsers 
+1036 
+#offAnswers  16014 
+
+7621 
+1920 
+40373 
+
+80
+30
+2273
+
+Pre-Processfing:Forallthedatasets,wedfiscardallcodeblocks,
+HTMLtags,andstop wordsfinthetext.Answerkeywordsare
+extractedusfingentfitydfictfionaryandStanffordPOS-Tagger3.To
+
+(17)
+
+3
+https://nlp.stanfford.edu/sofftware/tagger.shtml
+
+2734 
+
+train word vector representations, we utilize all the crawled texts
+as the corpus. Skip-gram architecture in package gensim4 is used
+to learn the vector representation of every answer keyword. The
+dimensionality of word vectors is set to 100, context window size is
+set to 5, and the minimum occurrence count is set to 20. For more
+details on the embedding algorithm, please refer to [23].
+
+5.2 Experiment Protocols
+
+5.2.1 Comparison Methods. We compare the proposed Text-
+Truth model against several state-of-the-art truth discovery and
+retrieval-based answer selection approaches.
+
+Bag-of-Word (BOW) Similarity: The bag-of-word vectors of
+questions and their answers are extracted. Answers are ranked
+according to the similarity values between the question vector and
+its corresponding answer vectors.
+
+Topic Similarity: We utilize Latent Dirichlet Allocation (i.e.
+LDA [2]) to extract a 100-dimension topic representation for each
+question and its corresponding answers. Similar to BOW, answers
+are ranked according to the cosine similarity to the question.
+
+CRH [13] + Topic Dist.: CRH is an optimization based truth
+discovery framework which can handle both categorical and contin-
+uous data. The goal of the optimization problem is to minimize the
+weighted loss of the aggregation results. In the experiment, we use
+the topic distributions as the representations of the whole answers
+to be fed to CRH.
+
+CRH [13] + Word Vec.: This baseline approach is similar to
+CRH + Topic Dist. except that the inputs are changed to the average
+word vectors of answers. These word vector representations are
+learned as in [23].
+
+CATD [12] + Topic Dist.: CATD is another optimization based
+truth discovery framework which considers the long-tail phenom-
+ena in the data. The optimization objective is similar to that of
+CRH. However, the upper bounds of user reliability are used for
+weight loss calculation. Similar to CRH + Topic Dist., we use the
+topic distributions as the representations of the whole answers to
+be fed to CATD.
+
+CATD [12] + Word Vec.: This baseline approach is similar to
+CATD + Topic Dist. except that the inputs are changed to the average
+word vectors of answers. The word vector representations are the
+same as those in CRH + Word Vector.
+
+For each baseline approach, we implement it and set its parame-
+ters according to the method recommended by the original papers.
+5.2.2 Evaluation Metrics. Due to the differences in dataset char-
+acteristics, evaluation metrics for three datasets are slightly differ-
+ent. On CQA datasets, we report the precisions of returned best an-
+swers from each method for each question. On student test dataset,
+we report the average score of returned top-K (K is set to 1-10 in this
+paper) trustworthy answers from each method for each question.
+
+5.3 Performance and Analysis
+The results are shown in Figure 3 and Table 2. For student exam
+dataset, we only show the results on exam 1 3 data. The results
+on rest exams follow the same tendency. As one can see, the pro-
+posed method TextTruth consistently outperforms all the baseline
+
+4https://pypi.python.org/pypi/gensim, an implementation of Word2Vec
+
+Table 2: Results on ServerFault Dataset & SuperUser Dataset.
+
+Method
+BOW Similarity
+Topic Similarity
+CATD + Topic Dist.
+CATD + Word Vec.
+CRH + Topic Dist.
+CRH + Word Vec.
+TextTruth
+
+ServerFault
+
+0.2077
+0.2462
+0.2311
+0.1821
+0.2453
+0.1847
+0.3985
+
+SuperUser
+
+0.1944
+0.2462
+0.2308
+0.2234
+0.2453
+0.2231
+0.4019
+
+methods. By outperforming various retrieval-based approaches and
+state-of-the-art truth discover approaches, the proposed TextTruth
+demonstrates its great advantages on natural language data.
+
+The reasons why the proposed TextTruth surpasses all the base-
+line methods are as follows. First, retrieval-based approaches (i.e.,
+BOW Similarity and Topic Similarity) rank the answers merely
+based on the semantic similarity between the question and an-
+swers. However, a question itself does not necessarily cover all
+the semantics that should be covered in ideal answers. Therefore,
+retrieval-based methods only discover relevant answers instead of
+trustworthy answers. On the other hand, although existing truth
+discovery methods can capture user reliability for answer ranking,
+the performance is not very satisfactory. This is because these truth
+discovery approaches treat the answers as an integrated semantic
+unit, and ignore the fact that the semantic meaning of each answer
+may be complicated. Therefore, single vector representations fail
+to capture the innate correlations among these answers. To make
+things worse, CRH and CATD regard the weighted aggregation of
+these single vector representations as the “true” semantic represen-
+tation to evaluate user reliabilities. However, answers from different
+users may involve distinct aspects of answers. Therefore, aggre-
+gating semantic representation of answers with distinct aspects
+only produces an inaccurate representation, which cannot be used
+to correctly estimate the reliabilities of users. The inaccurate user
+reliability estimation would further lead to incorrect aggregated
+results.
+
+In contrast to existing approaches, the proposed TextTruth re-
+gards each answer as a collection of fine-grained semantic units
+(i.e., factors), which are represented by separated keyword vector
+representations. Based on these semantic units, TextTruth discovers
+the innate factors of each answer by grouping keywords into fac-
+tors, and evaluates the trustworthiness of each answer on the top
+of these factors. As mentioned in the above paragraph, the major
+reason why existing truth discovery methods cannot produce satis-
+factory results is that these methods cannot aggregate the semantic
+representation of answers with distinct aspects effectively. Instead,
+the proposed TextTruth evaluate the users’ reliabilities according to
+whether their answers contain keywords from the factors that are
+regarded to be correct (or incorrect). Therefore, the trustworthiness
+of each answer is better evaluated, which leads to the best result.
+
+5.4 Case Study
+To better evidence the analysis above, we give a case study on a
+question in the exam dataset. The question is related to the data
+structure. The result of the case study is shown in Table 3. In Table 3
+
+Research Track PaperKDD 2018, August 19‒23, 2018, London, United Kingdom2735 Research Track Paper
+
+KDD 2018, August 19‒23, 2018, London, Unfited Kfingdom
+
+4.50
+
+4.25
+
+4.00
+
+3.75
+
+3.50
+
+3.25
+
+3.00
+
+Score
+Average
+
+Score
+Average
+
+4.6
+
+4.4
+
+4.2
+
+4.0
+
+3.8
+
+3.6
+
+3.4
+
+3.2
+
+CATD-Factor
+CRH-Factor
+Topfic
+BOW
+CATD-Word
+CRH-Word
+TextTruth
+
+CATD-Factor
+CRH-Factor
+Topfic
+BOW
+CATD-Word
+CRH-Word
+TextTruth
+
+2
+
+4
+
+6
+Top-K
+
+8
+
+10
+
+2
+
+4
+
+6
+Top-K
+
+8
+
+10
+
+Score
+Average
+
+4.5
+
+4.0
+
+3.5
+
+3.0
+
+2.5
+
+CATD-Factor
+CRH-Factor
+Topfic
+BOW
+CATD-Word
+CRH-Word
+TextTruth
+
+2
+
+4
+
+6
+Top-K
+
+8
+
+10
+
+(a)
+
+Exam1
+
+(b)
+
+Exam2
+
+(c)Exam3
+
+Ffigure3:PerfformanceonExamDatasets.
+
+Table3:CaseStudyoffRealQuestfionandAnswers.
+
+Questfion
+
+Whatfisa tree?
+
+Content
+
+GroundtruthAnswer Acollectfionoffnodes,whfichhasaspecfialnodecalledroot,andtherestoffthenodesarepartfitfionedfintoone
+
+ormoredfisjofintsets,eachsetbefingatree.
+
+TopAnswer1
+
+TopAnswer2
+
+Atreefisafinfitesetoffoneormorenodeswfithaspecfiallydesfignatednodecalledtherootandtheremafinfing
+nodesarepartfitfionedfintodfisjofintsetswhereeachoffthesesetsfisatree.
+
+Aafinfitecollectfionoffnodes,wherefitstarts,wfithanelement,calledtheroot„whfichhaschfildren,andfits
+chfildrenhavechfildrenuntfilyougettotheleaveswhficharethelastelementsandhavetochfildren
+
+UntrustworthyAnswer Itfisalfistoffnumbersfinalfistmadeby comparfingvaluesoffnodesalreadyfinthetreeandaddfingtothe
+
+approprfiatespot.Itsalfistmadeupoffnodeswfithlefftandrfightpofints.
+
+wordsfinbluecolorarekeywordsthatareestfimatedtobetrustwor-
+thy,whfilewordsfinredcolorarekeywordsthatareestfimatedtobe
+untrustworthyorunrelated.Thegroundtruthanswerfisprovfided
+bythefinstructors.
+
+Asonecansee,theproposedmethodcanautomatficallyselect
+keywordsthatare meanfingffultothequestfions,suchas“node”,
+“tree”and“root”. Moreover,wecanobservethatthetop-ranked
+answershavemoretruekeywordsthanlow-rankeduntrustworthy
+answers.Thesephenomenaagafindemonstratethattheresultsoff
+theproposedmodelarebotheffectfiveandfinterpretable.Thecase
+studyalsodemonstrateswhyexfistfingapproachesffafiltoproduce
+satfisffactoryresults.Ffirst,thequestfionfitselffmerelyconsfistsoffone
+keyword‘tree’.Thereffore,retrfieval-basedmethods,rank‘Untrust-
+worthyAnswer’over‘TopAnswer2’,becausefitcontafinsexactly
+thesamekeywordthatexfistsfinthequestfion.Thfisfindficatesthat
+wecannotrelymerelyonrelevancetofindtrustworthyanswers.
+Second,wecanseethatthecorrectkeywordsfinvolvemultfipleas-
+pects(fi.e.,ffactors).Theseffactorsshapeacomprehensfivedescrfiptfion
+offatree.Suchphenomenonfisverycommonfinnaturallanguage
+questfionsandanswers,butcannotbesuccessffullyhandledbythe
+exfistfingmethods.Thatfiswhytheproposedmethodcanproduce
+betterresultsthanthestate-off-the-arttruthdfiscoverymethods.
+
+5.5 UserRelfiabfilfityValfidatfion
+Thequantfitatfiveresultsandthecasestudyshownabovehave
+demonstratedthattheproposedmethodcanoutperfformotherbase-
+lfinemethods.Inthfissectfion,weffurtherexhfibfittheestfimateduser
+relfiabfilfitfiesbytheproposedapproach.Astherearenodfirectuser
+
+Average Score
+Truth 
+Ground 
+
+5.0
+
+4.5
+
+4.0
+
+3.5
+
+3.0
+
+0.35 0.40 0.45 0.50 0.55 0.60 0.65 0.70
+
+Estfimated User Relfiabfilfity (Range: 0-1)
+
+Ffigure4:EstfimatedUserRelfiabfilfityV.S.GroundTruthUser
+Score.
+
+relfiabfilfityvaluesontheCQAdataset,weonlyfinvestfigatetheestfi-
+mateduserrelfiabfilfitfiesonthestudentexamdataset.Specfifically,
+weusetheaveragescoreoffastudent’sanswertoeachquestfionas
+thegroundtruthrelfiabfilfity.Intufitfively,thelearnedtwo-ffolduser
+relfiabfilfityparameters(fi.e.,ϕ0andϕ1)arenotdfirectlyproportfional
+tothetrueuserrelfiabfilfity;weusethemetrficprecdefinedfinEq.(19)
+fforuserrelfiabfilfityvalfidatfion.Duetospacelfimfitatfion,weonlyshow
+oneexample,whfichcomesffromthemfid-resultoffTextTruthon
+exam10,finFfigure4.InFfigure4,eachpofintdenotesauser.The
+Y-axfisfistheuserrelfiabfilfitygroundtruthandtheX-axfisfisthees-
+tfimateduserprecfisfionscore.Asonecansee,theestfimateduser
+relfiabfilfityscore(X)typficallyfincreaseswhenthegroundtruthuser
+
+2736 
+
+reliability (Y) increases which means that the proposed TextTruth
+successfully captures the reliabilities of users.
+
+6 CONCLUSIONS
+As an emerging topic, truth discovery has shown its effectiveness in
+a wide range of applications with structured data. However, existing
+methods all suffer on unstructured text data, due to the semantic
+ambiguity of natural languages and the complexity of text answers.
+To tackle these challenges, in this paper, we propose a probabilistic
+model named TextTruth that takes vector representations of key
+factors extracted from answers as inputs and outputs the ranking
+of answers based on the trustworthiness of key factors within each
+answer. Specifically, the model jointly learns the clustering label
+and truth label for each answer factor cluster through modeling
+the generative process of answer factors’ embedding representa-
+tions. Experimental results on three real-world datasets prove the
+effectiveness of the proposed TextTruth model. Furthermore, case
+studies illustrate that the learned labels are interpretable.
+
+ACKNOWLEDGMENTS
+The authors would like to thank the anonymous referees for their
+valuable comments and suggestions. This work was sponsored in
+part by US National Science Foundation under grants IIS-1319973,
+IIS-1553411, CNS-1652503 and CNS-1737590. The views and conclu-
+sions contained in this paper are those of the authors and should
+not be interpreted as representing any funding agency.
+
+[2] David M Blei, Andrew Y Ng, and Michael I Jordan. 2003. Latent dirichlet allocation.
+
+REFERENCES
+[1] Kayhan Batmanghelich, Ardavan Saeedi, Karthik Narasimhan, and Sam Gersh-
+man. 2016. Nonparametric spherical topic modeling with word embeddings.
+arXiv preprint arXiv:1604.00126 (2016).
+JMLR 3, Jan (2003), 993–1022.
+[3] Mohamed Bouguessa, Benoît Dumoulin, and Shengrui Wang. 2008. Identifying
+authoritative actors in question-answering forums: the case of yahoo! answers.
+In Proc. of SIGKDD. 866–874.
+[4] Alexander Philip Dawid and Allan M Skene. 1979. Maximum likelihood estima-
+tion of observer error-rates using the EM algorithm. Applied statistics (1979),
+20–28.
+[5] Xin Luna Dong, Laure Berti-Equille, and Divesh Srivastava. 2009. Integrating
+
+conflicting data: the role of source dependence. PVLDB 2, 1 (2009), 550–561.
+[6] Xin Luna Dong, Evgeniy Gabrilovich, Kevin Murphy, Van Dang, Wilko Horn,
+Camillo Lugaresi, Shaohua Sun, and Wei Zhang. 2015. Knowledge-based trust:
+Estimating the trustworthiness of web sources. PVLDB 8, 9 (2015), 938–949.
+[7] Minwei Feng, Bing Xiang, Michael R Glass, Lidan Wang, and Bowen Zhou. 2015.
+Applying deep learning to answer selection: A study and an open task. In Proc.
+of IEEE Workshop on ASRU. 813–820.
+[8] Alban Galland, Serge Abiteboul, Amélie Marian, and Pierre Senellart. 2010. Cor-
+roborating information from disagreeing views. In Proc. of WSDM. ACM, 131–140.
+[9] Siddharth Gopal and Yiming Yang. 2014. Von Mises-Fisher Clustering Models..
+In Proc. of ICML.
+question answering in discussion boards. In Proc. of SIGIR. 171–178.
+
+[10] Liangjie Hong and Brian D Davison. 2009. A classification-based approach to
+
+[11] Dan Jurafsky and James H. Martin. 2017. Speech and language processing : an
+introduction to natural language processing, computational linguistics, and speech
+recognition (3rd Edition).
+[12] Qi Li, Yaliang Li, Jing Gao, Lu Su, Bo Zhao, Murat Demirbas, Wei Fan, and Jiawei
+Han. 2014. A confidence-aware approach for truth discovery on long-tail data.
+PVLDB 8, 4 (2014), 425–436.
+[13] Qi Li, Yaliang Li, Jing Gao, Bo Zhao, Wei Fan, and Jiawei Han. 2014. Resolv-
+ing conflicts in heterogeneous data by truth discovery and source reliability
+estimation. In Proc. of SIGMOD. 1187–1198.
+[14] Xian Li, Xin Luna Dong, Kenneth Lyons, Weiyi Meng, and Divesh Srivastava.
+2012. Truth finding on the deep web: is the problem solved? PVLDB 6, 2 (2012),
+97–108.
+[15] Xian Li, Xin Luna Dong, Kenneth B Lyons, Weiyi Meng, and Divesh Srivastava.
+
+2015. Scaling up copy detection. In Proc. of ICDE. 89–100.
+
+[16] Xian Li, Weiyi Meng, and T Yu Clement. 2016. Verification of Fact Statements
+
+[19] Yaliang Li, Qi Li, Jing Gao, Lu Su, Bo Zhao, Wei Fan, and Jiawei Han. 2015. On
+
+with Multiple Truthful Alternatives.. In WEBIST (2). 87–97.
+[17] Xian Li, Weiyi Meng, and Clement Yu. 2011. T-verifier: Verifying truthfulness
+of fact statements. In Data Engineering (ICDE), 2011 IEEE 27th International
+Conference on. 63–74.
+[18] Yaliang Li, Nan Du, Chaochun Liu, Yusheng Xie, Wei Fan, Qi Li, Jing Gao, and
+Huan Sun. 2017. Reliable Medical Diagnosis from Crowdsourcing: Discover
+Trustworthy Answers from Non-Experts. In Proc. of WSDM. 253–261.
+the discovery of evolving truth. In Proc. of SIGKDD. 675–684.
+[20] Fenglong Ma, Yaliang Li, Qi Li, Minghui Qiu, Jing Gao, Shi Zhi, Lu Su, Bo Zhao,
+Heng Ji, and Jiawei Han. 2015. Faitcrowd: Fine grained truth discovery for
+crowdsourced data aggregation. In Proc. of SIGKDD. 745–754.
+[21] Fenglong Ma, Chuishi Meng, Houping Xiao, Qi Li, Jing Gao, Lu Su, and Aidong
+Zhang. 2017. Unsupervised Discovery of Drug Side-effects from Heterogeneous
+Data Sources. In Proc. of SIGKDD. ACM, 967–976.
+[22] Chuishi Meng, Wenjun Jiang, Yaliang Li, Jing Gao, Lu Su, Hu Ding, and Yun
+Cheng. 2015. Truth Discovery on Crowd Sensing of Correlated Entities. In Proc.
+of SenSys.
+[23] Tomas Mikolov, Ilya Sutskever, Kai Chen, Greg S Corrado, and Jeff Dean. 2013.
+Distributed representations of words and phrases and their compositionality. In
+Advances in NIPS. 3111–3119.
+[24] Michael Mohler, Razvan Bunescu, and Rada Mihalcea. 2011. Learning to grade
+short answer questions using semantic similarity measures and dependency
+graph alignments. In Proc. of ACL. 752–762.
+[25] Gabriel Nuñez-Antonio and Eduardo Gutiérrez-Peña. 2005. A Bayesian analysis
+of directional data using the projected normal distribution. Journal of Applied
+Statistics 32, 10 (2005), 995–1001.
+[26] Jeff Pasternack and Dan Roth. 2011. Making better informed trust decisions with
+generalized fact-finding. In IJCAI. 2324–2329.
+1009–1020.
+
+[27] Jeff Pasternack and Dan Roth. 2013. Latent credibility analysis. In Proc. of WWW.
+[28] Cicero dos Santos, Ming Tan, Bing Xiang, and Bowen Zhou. 2016. Attentive
+
+[36] Yaqing Wang, Fenglong Ma, Lu Su, and Jing Gao. 2017. Discovering Truths from
+
+[29] Anish Das Sarma, Xin Luna Dong, and Alon Halevy. 2011. Data integration with
+
+[30] J. Straub, T. Campbell, J. P. How, and J. W. Fisher. 2015. Small-variance nonpara-
+
+pooling networks. arXiv preprint arXiv:1602.03609 (2016).
+dependent sources. In Proc. of EDBT.
+metric clustering on the hypersphere. In Proc. of CVPR. 334–342.
+[31] Ming Tan, Bing Xiang, and Bowen Zhou. 2015. LSTM-based Deep Learning
+Models for non-factoid answer selection. arXiv preprint arXiv:1511.04108 (2015).
+[32] Dong Wang, Md Tanvir Amin, Shen Li, Tarek Abdelzaher, Lance Kaplan, Siyu Gu,
+Chenji Pan, Hengchang Liu, Charu C Aggarwal, Raghu Ganti, et al. 2014. Using
+humans as sensors: an estimation-theoretic perspective. In Proc. of IPSN. 35–46.
+[33] Dong Wang, Lance Kaplan, Hieu Le, and Tarek Abdelzaher. 2012. On truth
+discovery in social sensing: A maximum likelihood estimation approach. In Proc.
+of IPSN. 233–244.
+[34] Di Wang and Eric Nyberg. 2015. A Long Short-Term Memory Model for Answer
+Sentence Selection in Question Answering.. In ACL (2). 707–712.
+[35] Xianzhi Wang, Quan Z Sheng, Xiu Susie Fang, Lina Yao, Xiaofei Xu, and Xue Li.
+2015. An integrated bayesian approach for effective multi-truth discovery. In
+Proc. of CIKM. 493–502.
+Distributed Data. In Proc. of ICDM. IEEE, 505–514.
+[37] Zhiguo Wang, Haitao Mi, and Abraham Ittycheriah. 2016. Sentence Simi-
+larity Learning by Lexical Decomposition and Composition. arXiv preprint
+arXiv:1602.07019 (2016).
+[38] Jacob Whitehill, Ting-fan Wu, Jacob Bergsma, Javier R Movellan, and Paul L
+Ruvolo. 2009. Whose vote should count more: Optimal integration of labels from
+labelers of unknown expertise. In Advances in NIPS. 2035–2043.
+[39] Houping Xiao, Jing Gao, Qi Li, Fenglong Ma, Lu Su, Yunlong Feng, and Aidong
+Zhang. 2016. Towards confidence in the truth: A bootstrapping based truth
+discovery approach. In Proc. of SIGKDD. 1935–1944.
+[40] Liu Yang, Minghui Qiu, Swapna Gottipati, Feida Zhu, Jing Jiang, Huiping Sun, and
+Zhong Chen. 2013. Cqarank: jointly model topics and expertise in community
+question answering. In Proc. of CIKM. 99–108.
+Sequence Tagging with Tree Edit Distance. In Proc. of NAACL-HLT. 858–867.
+conflicting information providers on the web. TKDE 20, 6 (2008), 796–808.
+Lu Su. 2016. Influence-Aware Truth Discovery. In Proc. of CIKM. 851–860.
+[44] Bo Zhao, Benjamin IP Rubinstein, Jim Gemmell, and Jiawei Han. 2012. A bayesian
+approach to discovering truth from conflicting sources for data integration.
+PVLDB 5, 6 (2012), 550–561.
+[45] Guangyou Zhou, Siwei Lai, Kang Liu, and Jun Zhao. 2012. Topic-sensitive prob-
+abilistic model for expert finding in question answer communities. In Proc. of
+CIKM. 1662–1666.
+
+[41] Xuchen Yao, Benjamin Van Durme, and Peter Clark. 2013. Answer Extraction as
+
+[43] Hengtong Zhang, Qi Li, Fenglong Ma, Houping Xiao, Yaliang Li, Jing Gao, and
+
+[42] Xiaoxin Yin, Jiawei Han, and Philip S Yu. 2008. Truth discovery with multiple
+
+Research Track PaperKDD 2018, August 19‒23, 2018, London, United Kingdom2737 
