@@ -52,8 +52,9 @@ exports.parse = (req, res) ->
   pythonProcess = spawn('python3',["/home/uno/repos/TextMining/ner/detect-persons.py", text]);
   pythonProcess.stdout.on 'data', (data) ->
     data = JSON.parse(data)
+    queries = []
     for name in data
-      queries.push [name, {
+      queries.push {
         "name": "#{name}",
         "description": {
           "label": "description",
@@ -71,10 +72,10 @@ exports.parse = (req, res) ->
         "lang": "en",
         "flatten": true,
         "unique": true
-      }]
+      }
     async.mapSeries queries, ((data, callback) ->
-      crawl.retrieve data[1], (wiki) ->
-        callback null, {"original": data[0],"results": wiki.body.results};
+      crawl.retrieve data, (wiki) ->
+        callback null, {"original": data.name,"results": wiki.body.results};
     ), (err, results) ->
       res.json {"text": text, "names": results}
       return
