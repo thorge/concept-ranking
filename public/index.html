@@ -9,8 +9,8 @@
   <h1>Retrieve</h1>
   <form class="col s12">
     <div class="input-field">
-      <input id="name" type="text">
-      <label for="name">Name</label>
+      <input id="text" type="text">
+      <label for="text">Text</label>
     </div>
     <a id="retrieve" class="waves-effect waves-light btn">Retrieve</a>
   </form>
@@ -34,8 +34,8 @@
     };
     
     document.getElementById("retrieve").onclick = function(){
-      var name = document.getElementById("name").value
-      getJSON('http://localhost:8081/api/retrieve/' + name,
+      var text = document.getElementById("text").value
+      getJSON('http://localhost:8081/api/parse?text=' + text,
       function(err, data) {
         if (err !== null) {
           document.getElementById("result").innerHTML='Something went wrong: ' + err;
