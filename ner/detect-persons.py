@@ -13,8 +13,9 @@ from io import BytesIO
 from io import StringIO 
 import sys
 import os
+import json
 
-filename = sys.argv[1]
+input = sys.argv[1]
 
 ##tokinizesetups
 from spacy.tokenizer import Tokenizer
@@ -92,17 +93,23 @@ def extract_names(text):
 
     output = set(output)
     return output
- 
+
+## json dump helper
+def set_default(obj):
+    if isinstance(obj, set):
+        return list(obj)
+    raise TypeError
+
+## Main 
 if __name__ == '__main__':
     
     
-    text = convert(filename)
-    names = extract_names(tokenize(text))
-    with open('persons-names.csv', 'w') as csvFile: 
-        writer = csv.writer(csvFile)
-        writer.writerow(names)
+    #text = convert(filename)
+    names = extract_names(tokenize(input))
+    #with open('persons-names.csv', 'w') as csvFile: 
+    #    writer = csv.writer(csvFile)
+    #    writer.writerow(names)
+    #csvFile.close()
 
-    csvFile.close()
-
-    print("jhvfnvifj")
+    print(json.dumps(names, default=set_default))
     sys.stdout.flush()
