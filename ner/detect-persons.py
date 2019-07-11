@@ -15,6 +15,21 @@ import sys
 
 filename = sys.argv[1]
 
+##tokinizesetups
+from spacy.tokenizer import Tokenizer
+from spacy.lang.en import English
+nlp = English()
+tokenizer = Tokenizer(nlp.vocab)
+tokenizer = nlp.Defaults.create_tokenizer(nlp)
+
+##nltk stop word setups
+import nltk
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+
+en_stops = set(stopwords.words('english'))
+de_stops = set(stopwords.words('german'))
+
 ##Convert PDF file to Text 
 def convert(fname, pages=None):
     if not pages:
@@ -35,6 +50,30 @@ def convert(fname, pages=None):
     text = output.getvalue()
     output.close
     return text
+
+def tokenize(text):
+    tokens = tokenizer(text)
+    tokenedText = " "
+    en_stops = set(stopwords.words('english'))
+    de_stops = set(stopwords.words('german'))
+
+    all_words = tokens
+    for word in all_words: 
+        if (word not in en_stops and word not in de_stops):
+            tokenedText += word.text
+            tokenedText +=' '
+    ##print(tokenedText)
+    return tokenedText 
+
+def string_edit(strn):
+    strn = strn.strip()
+    strn = strn.replace('\n', ' ')
+    strn = strn.replace('  ',' ')
+    strn = strn.replace('#','')
+    strn = strn.replace('!','')
+    strn = strn.replace('"','')
+    return strn
+
 ##Extract names from the text
 def extract_names(text):
     
@@ -47,8 +86,8 @@ def extract_names(text):
     
         if X.label_ == 'PERSON':
             
-            output.append(X.text)
-            ##print(X.text, X.label_)
+            output.append(string_edit(X.text))
+           
 
     output = set(output)
     return output
@@ -56,8 +95,7 @@ def extract_names(text):
 if __name__ == '__main__':
     
     text = convert(filename)
-    names = extract_names(text)
-
+    names = extract_names(tokenize(text))
     with open('persons-names.csv', 'w') as csvFile: 
         writer = csv.writer(csvFile)
         writer.writerow(names)
