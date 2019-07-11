@@ -18,7 +18,24 @@ What we have to do:
 ![Process](doc/process.jpg?raw=true "Overview of process.")
 
 ### 1. Named Entity Recognition
-TODO
+### Build
+
+Make sure you have *python3* and *pip* installed:
+
+```bash
+$ sudo apt install python3 pip3
+```
+
+And of course the corresponding python modules:
+
+
+```bash
+$ python3 -m pip install spacy
+$ python3 -m spacy download en_core_web_sm 
+$ python3 -m pip install nltk
+$ python3 -m pip install pdfminer.six 
+```
+
 
 ### 2. Fetch Concept Candidates
 We fetch concept candidates by querying a knowledge base (here: Wikidata) for possible entities with the corresponding names, that we found in the NER step. Querying wikidata for a person by name the common way will most likely timeout, because of one minute execution time at sparql endpoint. Wikidata has no indexed data directly available, but we can make use of the Mediawiki API Service that's also available by SPARQL request and use it for full text search.
