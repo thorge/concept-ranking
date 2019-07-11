@@ -30,23 +30,16 @@
         "label": "placeofdeath"
       }, {
         "name": "P106",
-        "label": "occupation",
-        "stopword": true
+        "label": "occupation"
       }, {
         "name": "P108",
-        "label": "employer",
-        "stopword": true,
-        "unique": true
+        "label": "employer"
       }, {
         "name": "P463",
-        "label": "memberof",
-        "stopword": true,
-        "unique": true
+        "label": "memberof"
       }],
       "limit": 1000,
-      "lang": "en",
-      "flatten": true,
-      "unique": true
+      "lang": "en"
     };
     crawl.retrieve(r, function (result) {
       res.json(result.body.results);

@@ -5,4 +5,6 @@ log
 *.*~
 package-lock.json
 crawl/**/result*
+ner/person-names.csv
+net/input.txt
 *.~*
