@@ -13,6 +13,7 @@
     });
     app.route('/api/retrieve/:name').get(controller.retrieve);
     app.route('/api/ner').get(controller.ner);
+    app.route('/api/parse').get(controller.parse);
   };
 }).call(void 0);
 //# sourceMappingURL=routes.js.map
