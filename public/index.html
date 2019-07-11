@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Retrieve</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+</head>
+<body class="container">
+
+  <h1>Retrieve</h1>
+  <form class="col s12">
+    <div class="input-field">
+      <input id="name" type="text">
+      <label for="name">Name</label>
+    </div>
+    <a id="retrieve" class="waves-effect waves-light btn">Retrieve</a>
+  </form>
+  <pre><code id="result"></code></pre>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  <script>
+    var getJSON = function(url, callback) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.responseType = 'json';
+      xhr.onload = function() {
+        var status = xhr.status;
+        if (status === 200) {
+          callback(null, xhr.response);
+        } else {
+          callback(status, xhr.response);
+        }
+      };
+      xhr.send();
+    };
+    
+    document.getElementById("retrieve").onclick = function(){
+      var name = document.getElementById("name").value
+      getJSON('http://localhost:8081/api/retrieve/' + name,
+      function(err, data) {
+        if (err !== null) {
+          document.getElementById("result").innerHTML='Something went wrong: ' + err;
+        } else {
+          console.log(data);
+          document.getElementById("result").innerHTML=JSON.stringify(data, null, 2);
+        }
+      });
+    };
+  </script>
+</body>
+</html>
