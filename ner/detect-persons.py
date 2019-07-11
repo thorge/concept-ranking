@@ -12,6 +12,7 @@ import en_core_web_sm
 from io import BytesIO  
 from io import StringIO 
 import sys
+import os
 
 filename = sys.argv[1]
 
@@ -41,8 +42,8 @@ def convert(fname, pages=None):
     manager = PDFResourceManager()
     converter = TextConverter(manager, output, laparams=LAParams())
     interpreter = PDFPageInterpreter(manager, converter)
- 
-    infile = open(fname, 'rb')
+    absolute_path = os.path.dirname(os.path.abspath(__file__))
+    infile = open(absolute_path + '/' + fname, 'rb')
     for page in PDFPage.get_pages(infile, pagenums):
         interpreter.process_page(page)
     infile.close()
@@ -94,6 +95,7 @@ def extract_names(text):
  
 if __name__ == '__main__':
     
+    
     text = convert(filename)
     names = extract_names(tokenize(text))
     with open('persons-names.csv', 'w') as csvFile: 
@@ -102,15 +104,5 @@ if __name__ == '__main__':
 
     csvFile.close()
 
-    file_name= filename.split('.')[0]
-    file1 = open(file_name + '.txt',"w") 
-    file1.writelines(text)
-    file1.close()
-    sys.stdout.flush()
     print("jhvfnvifj")
     sys.stdout.flush()
-    
-
-
-
-
