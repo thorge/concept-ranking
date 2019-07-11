@@ -1,11 +1,12 @@
 'use strict'
 crawl = require('../../crawl/build/crawl.min.js')
-
+spawn = require("child_process").spawn;
 
 
 exports.retrieve = (req, res) ->
   unless req.params.name
     res.send "Wrong input."
+    return
   r = {
     "name": "#{req.params.name}",
     "description": {
@@ -27,5 +28,17 @@ exports.retrieve = (req, res) ->
   }
   crawl.retrieve r, (result) ->
     res.json result.body.results
+    return
+  return
+  
+exports.ner = (req, res) ->
+  text = req.query['text']
+  unless text
+    res.send "Wrong input."
+    return
+  # python ner
+  pythonProcess = spawn('python3',["/home/uno/repos/TextMining/ner/detect-persons.py", text]);
+  pythonProcess.stdout.on 'data', (data) ->
+    res.send data
     return
   return
