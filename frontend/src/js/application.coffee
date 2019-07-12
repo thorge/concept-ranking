@@ -36,17 +36,32 @@ $(document).ready ->
 
     xhr.send()
     return
+    
+  mergeNames = (names) ->
+    names.sort (a, b) ->
+      a.original.length - (b.original.length)
+    return names
 
   parse = (text, data) ->
-    for person in data.names
-      text = text.replace new RegExp(person.original, 'gi'), '<span class="lime accent-1">' + person.original + '</span>'
+    names = mergeNames data.names
+    console.log names
+    for person in names
+      console.log person.original
+      regexp = (' ' + person.original).replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&")
+      if person.results.length is 0
+        text = text.replace new RegExp(regexp, 'gi'), ' <span class="lime accent-1">' + person.original + '</span>'
+      else
+        tooltip = ""
+        for result in person.results
+          tooltip += "#{result.label} (#{result.item})<br>"
+        console.log tooltip
+        text = text.replace new RegExp(regexp, 'gi'), ' <span class="light-green accent-1 tooltipped" data-tooltip="' + tooltip + '">' + person.original + '</span>'
     return text
     
   $('#retrieve').click ->
     $('#json').parent().addClass 'disabled'
     $('#content').attr 'contenteditable', false
-    $('#content').removeClass "lime"
-    $('#content').addClass "grey"
+    $('#content').fadeTo "slow" , 0.3
     text = document.getElementById('content').innerText
     if text[text.length-1] is '\n'
       text = text.slice 0,-1
@@ -54,12 +69,15 @@ $(document).ready ->
       if err != null
         console.log 'Something went wrong: ' + err
       else
+        console.log data
         $('.tab').removeClass 'disabled'
         $('#content').attr 'contenteditable', true
-        $('#content').removeClass "grey"
+        $('#content').removeClass "lime"
         $('#content').addClass "light-green"
+        $('#content').fadeTo "slow" , 1
         instance[0].select('output')
         document.getElementById('content').innerHTML = parse(text, data)
         $('#code').html JSON.stringify(data, null, 2)
+        $('.tooltipped').tooltip()
       return
     return
