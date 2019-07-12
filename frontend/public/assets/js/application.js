@@ -2,7 +2,7 @@
 
 (function () {
   $(document).ready(function () {
-    var getJSON, i, instance, parse, tabs;
+    var getJSON, i, instance, mergeNames, parse, tabs;
     console.log('Up and running..');
     tabs = document.querySelectorAll('.tabs');
     i = 0;
@@ -50,13 +50,37 @@
       xhr.send();
     };
 
-    parse = function parse(text, data) {
-      var j, len, person, ref;
-      ref = data.names;
+    mergeNames = function mergeNames(names) {
+      names.sort(function (a, b) {
+        return a.original.length - b.original.length;
+      });
+      return names;
+    };
 
-      for (j = 0, len = ref.length; j < len; j++) {
-        person = ref[j];
-        text = text.replace(new RegExp(person.original, 'gi'), '<span class="lime accent-1">' + person.original + '</span>');
+    parse = function parse(text, data) {
+      var j, k, len, len1, names, person, ref, regexp, result, tooltip;
+      names = mergeNames(data.names);
+      console.log(names);
+
+      for (j = 0, len = names.length; j < len; j++) {
+        person = names[j];
+        console.log(person.original);
+        regexp = (' ' + person.original).replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&");
+
+        if (person.results.length === 0) {
+          text = text.replace(new RegExp(regexp, 'gi'), ' <span class="lime accent-1">' + person.original + '</span>');
+        } else {
+          tooltip = "";
+          ref = person.results;
+
+          for (k = 0, len1 = ref.length; k < len1; k++) {
+            result = ref[k];
+            tooltip += "".concat(result.label, " (").concat(result.item, ")<br>");
+          }
+
+          console.log(tooltip);
+          text = text.replace(new RegExp(regexp, 'gi'), ' <span class="light-green accent-1 tooltipped" data-tooltip="' + tooltip + '">' + person.original + '</span>');
+        }
       }
 
       return text;
@@ -66,8 +90,7 @@
       var text;
       $('#json').parent().addClass('disabled');
       $('#content').attr('contenteditable', false);
-      $('#content').removeClass("lime");
-      $('#content').addClass("grey");
+      $('#content').fadeTo("slow", 0.3);
       text = document.getElementById('content').innerText;
 
       if (text[text.length - 1] === '\n') {
@@ -78,13 +101,16 @@
         if (err !== null) {
           console.log('Something went wrong: ' + err);
         } else {
+          console.log(data);
           $('.tab').removeClass('disabled');
           $('#content').attr('contenteditable', true);
-          $('#content').removeClass("grey");
+          $('#content').removeClass("lime");
           $('#content').addClass("light-green");
+          $('#content').fadeTo("slow", 1);
           instance[0].select('output');
           document.getElementById('content').innerHTML = parse(text, data);
           $('#code').html(JSON.stringify(data, null, 2));
+          $('.tooltipped').tooltip();
         }
       });
     });
