@@ -75,7 +75,7 @@ exports.parse = (req, res) ->
       }
     async.mapSeries queries, ((data, callback) ->
       crawl.retrieve data, (wiki) ->
-        callback null, {"original": data.name,"results": wiki.body.results};
+        callback null, {"original": data.name,"results": wiki.body.results, "query": wiki.query};
     ), (err, results) ->
       res.json {"text": text, "names": results}
       return

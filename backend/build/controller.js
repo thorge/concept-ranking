@@ -131,7 +131,8 @@
         return crawl.retrieve(data, function (wiki) {
           return callback(null, {
             "original": data.name,
-            "results": wiki.body.results
+            "results": wiki.body.results,
+            "query": wiki.query
           });
         });
       }, function (err, results) {
