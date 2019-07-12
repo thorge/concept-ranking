@@ -5,7 +5,7 @@ import PositionMap
 import SmallFunctions 
 import qualified Data.Map as Map
 
-import Data.List(sort)
+import Data.List(sort,sortOn)
 {-
 
 now we need to use the functions and datastructures from PositionMap in a useful way to compute probabilities , which 
@@ -41,6 +41,15 @@ pointsNameAndMetaData wikiID name pvs sp ss
          points'   (d:ds)  accPoints     = let mini = minimum d  
                                                med  = median $ sort d  
                                            in points' ds (accPoints + comp' mini med )
-         comp' mini1 medi1 = let min1 = fromInteger $ toInteger mini1
-                                 med1 = fromInteger $ toInteger medi1
-                             in 1.0 - (0.5* (min1**2) / 10000.0  + 0.5 * (med1**2) / 10000.0) 
+         comp' mini1 medi1 = let min1   = fromInteger $ toInteger mini1
+                                 med1   = fromInteger $ toInteger medi1
+                                 points = 1.0 - (0.5* (min1**2) / 10000.0  + 0.5 * (med1**2) / 10000.0)
+                             in if (points > 0) then points
+                                                else 0 
+
+-- for every wikidataID there is one PropsValues data set for it 
+-- the result is a sorted list, where the first entry is most likely the name we are searching for
+searchTheSuitingWikiDataID:: [WikidataID] -> Name -> [PropsValues] -> Map.Map String Pos -> Map.Map SinglePos String -> [(WikidataID,Name,Points)] 
+searchTheSuitingWikiDataID wIDs name pvList stringMap posMap = let zipped            = zip wIDs pvList 
+                                                                   widNamePointsList = foldr (\(iD,pvs) acc  -> pointsNameAndMetaData iD name pvs stringMap posMap : acc ) [] zipped 
+                                                               in  reverse $ sortOn (\(wikiId,namee,pss) -> pss) widNamePointsList 
