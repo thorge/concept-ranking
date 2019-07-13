@@ -2,7 +2,7 @@
 
 (function () {
   $(document).ready(function () {
-    var getJSON, i, instance, mergeNames, parse, tabs;
+    var generateTooltip, getJSON, i, instance, mergeNames, parse, tabs;
     console.log('Up and running..');
     tabs = document.querySelectorAll('.tabs');
     i = 0;
@@ -52,13 +52,25 @@
 
     mergeNames = function mergeNames(names) {
       names.sort(function (a, b) {
-        return a.original.length - b.original.length;
+        return b.original.length - a.original.length;
       });
       return names;
     };
 
+    generateTooltip = function generateTooltip(results) {
+      var j, len, result, tooltip;
+      tooltip = "";
+
+      for (j = 0, len = results.length; j < len; j++) {
+        result = results[j];
+        tooltip += "".concat(result.label, " (").concat(result.item, ")<br>");
+      }
+
+      return tooltip;
+    };
+
     parse = function parse(text, data) {
-      var j, k, len, len1, names, person, ref, regexp, result, tooltip;
+      var j, len, mapObj, names, person, regexp;
 
       if (data.names.length > 0) {
         names = mergeNames(data.names);
@@ -66,28 +78,24 @@
         names = data.names;
       }
 
-      console.log(names);
+      regexp = new RegExp(names.reduce(function (acc, cur) {
+        return acc.concat(cur.original.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&"));
+      }, []).join('|'), 'gi');
+      mapObj = {};
 
       for (j = 0, len = names.length; j < len; j++) {
         person = names[j];
-        console.log(person.original);
-        regexp = (' ' + person.original).replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&");
 
         if (person.results.length === 0) {
-          text = text.replace(new RegExp(regexp, 'gi'), ' <span class="lime accent-1">' + person.original + '</span>');
+          mapObj[person.original] = '<span class="lime accent-1">' + person.original + '</span>';
         } else {
-          tooltip = "";
-          ref = person.results;
-
-          for (k = 0, len1 = ref.length; k < len1; k++) {
-            result = ref[k];
-            tooltip += "".concat(result.label, " (").concat(result.item, ")<br>");
-          }
-
-          text = text.replace(new RegExp(regexp, 'gi'), ' <span class="light-green accent-1 tooltipped" data-tooltip="' + tooltip + '">' + person.original + '</span>');
+          mapObj[person.original] = '<span class="light-green accent-1 tooltipped" data-tooltip="' + generateTooltip(person.results) + '">' + person.original + '</span>';
         }
       }
 
+      text = text.replace(regexp, function (matched) {
+        return mapObj[matched];
+      });
       return text;
     };
 
@@ -104,7 +112,7 @@
 
       getJSON('http://localhost:8081/api/parse?text=' + encodeURIComponent(text), function (err, data) {
         if (err !== null) {
-          console.log("Something went wrong: ".concat(err, " ").concat(data));
+          console.log("(".concat(err, ") Something went wrong: ").concat(data));
         } else {
           console.log(data);
           $('.tab').removeClass('disabled');

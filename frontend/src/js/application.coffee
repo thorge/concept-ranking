@@ -25,7 +25,6 @@ $(document).ready ->
     xhr = new XMLHttpRequest
     xhr.open 'GET', url, true
     xhr.responseType = 'json'
-
     xhr.onload = ->
       status = xhr.status
       if status == 200
@@ -33,31 +32,37 @@ $(document).ready ->
       else
         callback status, xhr.response
       return
-
     xhr.send()
     return
     
   mergeNames = (names) ->
     names.sort (a, b) ->
-      a.original.length - (b.original.length)
+      b.original.length - (a.original.length)
     return names
 
+  generateTooltip = (results) ->
+    tooltip = ""
+    for result in results
+      tooltip += "#{result.label} (#{result.item})<br>"
+    return tooltip
+  
   parse = (text, data) ->
     if data.names.length > 0
       names = mergeNames data.names
     else 
-      names = data.names
-    console.log names
+      names = data.names      
+    regexp = new RegExp(names.reduce(((acc, cur) ->
+      acc.concat cur.original.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&")
+    ), []).join('|'), 'gi')
+    mapObj = {}
     for person in names
-      console.log person.original
-      regexp = (' ' + person.original).replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, "\\$&")
       if person.results.length is 0
-        text = text.replace new RegExp(regexp, 'gi'), ' <span class="lime accent-1">' + person.original + '</span>'
+        mapObj[person.original] = '<span class="lime accent-1">' + person.original + '</span>'
       else
-        tooltip = ""
-        for result in person.results
-          tooltip += "#{result.label} (#{result.item})<br>"
-        text = text.replace new RegExp(regexp, 'gi'), ' <span class="light-green accent-1 tooltipped" data-tooltip="' + tooltip + '">' + person.original + '</span>'
+        mapObj[person.original] = '<span class="light-green accent-1 tooltipped" data-tooltip="' + generateTooltip(person.results) + '">' + person.original + '</span>' 
+    text = text.replace(regexp, (matched) ->
+      mapObj[matched]
+    )
     return text
     
   $('#retrieve').click ->
@@ -69,7 +74,7 @@ $(document).ready ->
       text = text.slice 0,-1
     getJSON 'http://localhost:8081/api/parse?text=' + encodeURIComponent(text), (err, data) ->
       if err != null
-        console.log "Something went wrong: #{err} #{data}"
+        console.log "(#{err}) Something went wrong: #{data}"
       else
         console.log data
         $('.tab').removeClass 'disabled'
