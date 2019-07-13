@@ -5,7 +5,7 @@ async = require("async");
 
 exports.retrieve = (req, res) ->
   unless req.params.name
-    res.send "Wrong input."
+    res.status(500).send []
     return
   query = {
     "name": "#{req.params.name}",
@@ -34,7 +34,7 @@ exports.retrieve = (req, res) ->
 exports.ner = (req, res) ->
   text = req.query['text']
   unless text and Object.prototype.toString.call(text) is "[object String]"
-    res.send "Wrong input."
+    res.status(500).send []
     return
   # python ner
   pythonProcess = spawn('python3',["/home/uno/repos/TextMining/ner/detect-persons.py", text]);
@@ -47,7 +47,7 @@ exports.ner = (req, res) ->
 exports.parse = (req, res) ->
   text = req.query['text']
   unless text and Object.prototype.toString.call(text) is "[object String]"
-    res.send "Wrong input."
+    res.status(500).send []
     return
   pythonProcess = spawn('python3',["/home/uno/repos/TextMining/ner/detect-persons.py", text]);
   pythonProcess.stdout.on 'data', (data) ->

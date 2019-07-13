@@ -12,7 +12,7 @@
     var query;
 
     if (!req.params.name) {
-      res.send("Wrong input.");
+      res.status(500).send([]);
       return;
     }
 
@@ -61,7 +61,7 @@
     text = req.query['text'];
 
     if (!(text && Object.prototype.toString.call(text) === "[object String]")) {
-      res.send("Wrong input.");
+      res.status(500).send([]);
       return;
     } // python ner
 
@@ -78,7 +78,7 @@
     text = req.query['text'];
 
     if (!(text && Object.prototype.toString.call(text) === "[object String]")) {
-      res.send("Wrong input.");
+      res.status(500).send([]);
       return;
     }
 
