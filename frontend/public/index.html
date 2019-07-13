@@ -12,10 +12,18 @@
       overflow-x: auto;
       word-wrap: break-word;
     }
+    #retrieve {
+      margin-top: 10px;
+    }
+    #input, #json {
+      margin-top: 15px;
+    }
+    main {
+      padding-top: 30px;
+    }
   </style>
 </head>
 <body>
-
   <header>
     <nav>
       <div class="nav-wrapper container">
@@ -23,9 +31,7 @@
       </div>
     </nav>
   </header>
-  
-  
-  <main class="container" style="margin-top: 30px;">
+  <main class="container">
     <div class="row">
       <div class="col s12">
         <ul class="tabs">
@@ -33,11 +39,11 @@
           <li class="tab col s6 disabled"><a href="#json">JSON</a></li>
         </ul>
       </div>
-      <div id="input" class="col s12" style="margin-top: 15px;">
+      <div id="input" class="col s12">
         <div id="content" contenteditable="true">Input text..</div>
-        <a id="retrieve" class="waves-effect waves-light btn">Retrieve</a>
+        <a id="retrieve" class="waves-effect waves-light btn right">Retrieve</a>
       </div>
-      <div id="json" class="col s12" style="margin-top: 15px;"><pre><code id="code"></code></pre></div>
+      <div id="json" class="col s12"><pre><code id="code"></code></pre></div>
     </div>
   </main>
   <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>

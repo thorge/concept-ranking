@@ -59,7 +59,13 @@
 
     parse = function parse(text, data) {
       var j, k, len, len1, names, person, ref, regexp, result, tooltip;
-      names = mergeNames(data.names);
+
+      if (data.names.length > 0) {
+        names = mergeNames(data.names);
+      } else {
+        names = data.names;
+      }
+
       console.log(names);
 
       for (j = 0, len = names.length; j < len; j++) {
@@ -78,7 +84,6 @@
             tooltip += "".concat(result.label, " (").concat(result.item, ")<br>");
           }
 
-          console.log(tooltip);
           text = text.replace(new RegExp(regexp, 'gi'), ' <span class="light-green accent-1 tooltipped" data-tooltip="' + tooltip + '">' + person.original + '</span>');
         }
       }
@@ -97,21 +102,22 @@
         text = text.slice(0, -1);
       }
 
-      getJSON('http://localhost:8081/api/parse?text=' + text, function (err, data) {
+      getJSON('http://localhost:8081/api/parse?text=' + encodeURIComponent(text), function (err, data) {
         if (err !== null) {
-          console.log('Something went wrong: ' + err);
+          console.log("Something went wrong: ".concat(err, " ").concat(data));
         } else {
           console.log(data);
           $('.tab').removeClass('disabled');
-          $('#content').attr('contenteditable', true);
-          $('#content').removeClass("lime");
-          $('#content').addClass("light-green");
-          $('#content').fadeTo("slow", 1);
-          instance[0].select('output');
           document.getElementById('content').innerHTML = parse(text, data);
           $('#code').html(JSON.stringify(data, null, 2));
           $('.tooltipped').tooltip();
         }
+
+        $('#content').attr('contenteditable', true);
+        $('#content').removeClass("lime");
+        $('#content').addClass("light-green");
+        $('#content').fadeTo("slow", 1);
+        instance[0].select('output');
       });
     });
   });

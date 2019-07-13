@@ -43,7 +43,10 @@ $(document).ready ->
     return names
 
   parse = (text, data) ->
-    names = mergeNames data.names
+    if data.names.length > 0
+      names = mergeNames data.names
+    else 
+      names = data.names
     console.log names
     for person in names
       console.log person.original
@@ -54,7 +57,6 @@ $(document).ready ->
         tooltip = ""
         for result in person.results
           tooltip += "#{result.label} (#{result.item})<br>"
-        console.log tooltip
         text = text.replace new RegExp(regexp, 'gi'), ' <span class="light-green accent-1 tooltipped" data-tooltip="' + tooltip + '">' + person.original + '</span>'
     return text
     
@@ -65,19 +67,19 @@ $(document).ready ->
     text = document.getElementById('content').innerText
     if text[text.length-1] is '\n'
       text = text.slice 0,-1
-    getJSON 'http://localhost:8081/api/parse?text=' + text, (err, data) ->
+    getJSON 'http://localhost:8081/api/parse?text=' + encodeURIComponent(text), (err, data) ->
       if err != null
-        console.log 'Something went wrong: ' + err
+        console.log "Something went wrong: #{err} #{data}"
       else
         console.log data
         $('.tab').removeClass 'disabled'
-        $('#content').attr 'contenteditable', true
-        $('#content').removeClass "lime"
-        $('#content').addClass "light-green"
-        $('#content').fadeTo "slow" , 1
-        instance[0].select('output')
         document.getElementById('content').innerHTML = parse(text, data)
         $('#code').html JSON.stringify(data, null, 2)
         $('.tooltipped').tooltip()
+      $('#content').attr 'contenteditable', true
+      $('#content').removeClass "lime"
+      $('#content').addClass "light-green"
+      $('#content').fadeTo "slow" , 1
+      instance[0].select('output')
       return
     return
