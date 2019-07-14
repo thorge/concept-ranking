@@ -1,11 +1,16 @@
+{-# LANGUAGE OverloadedStrings #-} 
+
+
 module ComputeProbs where 
 
 
 import PositionMap
 import SmallFunctions 
 import qualified Data.Map as Map
-
-import Data.List(sort,sortOn)
+import Json 
+import Data.Text.Internal
+import Data.List(sort,sortOn,nub)
+import Data.String.Conversions (cs)
 {-
 
 now we need to use the functions and datastructures from PositionMap in a useful way to compute probabilities , which 
@@ -25,10 +30,49 @@ type PropValue = String
 
 type PropsValues = [(Prop,PropValue)]
 
-type Points = Float 
+type MetaWord = String 
+
+-- type Points = Float 
 
 
+computePoints :: QueryRes ->  [(OriginalName,[(WikiLink,Points)])] 
+computePoints qRes = let inputTxt   = getTxt qRes 
+                         nameList   =   getPersons qRes 
+                         stringTree = initStrKV inputTxt 
+                         posTree    = initPosKV inputTxt -- unneccessary 
+                     in concatMap (computeOne stringTree) nameList
 
+
+computeOne ::   Map.Map Text Pos -> PersonInText -> [(OriginalName,[(WikiLink,Points)])]
+computeOne strT person  = let oName           = getOriginalName person 
+                              positions       = findWord oName strT 
+                              wikiPersonList  = nub $ getWikiPersons person 
+                              rankings = map (\p -> map (getRanking strT p) wikiPersonList)  positions
+                              zipped  = map (\r -> (oName,r)) rankings   
+                          in zipped 
+
+getRanking :: Map.Map Text Pos -> SinglePos ->  WikiPerson -> (WikiLink,Points)
+getRanking strTr pos person  = let linkedWords = getWikiWords person 
+                                   wikiLink    = getWikiLink person 
+                                   wikiName    = getWikiName person
+                                   points      = foldr (\lWord acc -> (pointsfor1Word lWord pos strTr) + acc) 0 linkedWords 
+                               in (wikiLink,cs $ show points) 
+
+
+pointsfor1Word :: Text -> SinglePos -> Map.Map Text Pos -> Float 
+pointsfor1Word linkWord namePos strTr  = let linkWordPs = findWord   linkWord strTr 
+                                             distances  =  map (distance2 namePos) linkWordPs
+                                             mini = minimum distances 
+                                             med  = median $ sort distances
+                                         in comp' mini med where 
+                                              comp' mini1 medi1 = let min1   = fromInteger $ toInteger mini1
+                                                                      med1   = fromInteger $ toInteger medi1
+                                                                      points = 1.0 - (0.5* (min1**2) / 10000.0  + 0.5 * (med1**2) / 10000.0)
+                                                                    in if (points > 0) then points
+                                                                                   else 0 
+  
+
+{-
 -- now we dont notice which Property we are looking on, we assume that every chosen property has the same value 
 pointsNameAndMetaData :: WikidataID -> Name -> PropsValues -> Map.Map String Pos -> Map.Map SinglePos String -> (WikidataID,Name,Points) 
 pointsNameAndMetaData wikiID name pvs sp ss  
@@ -53,3 +97,6 @@ searchTheSuitingWikiDataID:: [WikidataID] -> Name -> [PropsValues] -> Map.Map St
 searchTheSuitingWikiDataID wIDs name pvList stringMap posMap = let zipped            = zip wIDs pvList 
                                                                    widNamePointsList = foldr (\(iD,pvs) acc  -> pointsNameAndMetaData iD name pvs stringMap posMap : acc ) [] zipped 
                                                                in  reverse $ sortOn (\(wikiId,namee,pss) -> pss) widNamePointsList 
+
+
+                                                               -}

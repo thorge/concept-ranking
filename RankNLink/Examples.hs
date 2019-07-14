@@ -1,7 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-} 
+
+
 module Examples where
 
 import PositionMap
 import ComputeProbs
+import Json 
 
 exStr1 = " Max Planck was a German theoretical physicist . His name in native language is Max Planck (German). Max Planck was born in Kiel . Franz Ferdinand is also a Person."
 
@@ -29,3 +33,6 @@ pointEx1 = pointsNameAndMetaData "sampleID" "Max Planck" propsVs stringTree posT
 pointEx2 = pointsNameAndMetaData "sampleID" "Franz Ferdinand" propsVs2 stringTree posTree
 
 suiting1 = searchTheSuitingWikiDataID ["ex1","ex2"] "Max Planck" [propsVs,propsVs2] stringTree posTree 
+
+
+exBuild = buildJSON [("name1",[("link123","5.7"),("link22","3.7")]), ("name2",[("link77","6.7"),("link22","2.0")] )]  

@@ -20,13 +20,43 @@ type WikiLink     = Text
 type LinkWord     = Text 
 
 
+type Points = Text 
+
+
 data QueryRes     = QueryRes Text [PersonInText]
- deriving Show 
+ deriving (Show,Eq) 
+
+getTxt :: QueryRes -> Text 
+getTxt (QueryRes t ps) = t 
+
+getPersons :: QueryRes -> [PersonInText]
+getPersons (QueryRes t ps) = ps 
+
 data PersonInText = PersonInText   OriginalName [WikiPerson]
- deriving Show 
+ deriving (Show,Eq) 
+
+
+
+getOriginalName :: PersonInText -> OriginalName 
+getOriginalName (PersonInText oname wL) = oname 
+
+getWikiPersons :: PersonInText -> [WikiPerson]
+getWikiPersons (PersonInText oname wList) = wList  
+
+
 
 data WikiPerson   = WikiPerson WikiName  WikiLink [LinkWord]
- deriving Show 
+ deriving (Show,Eq) 
+
+
+getWikiName :: WikiPerson -> WikiName 
+getWikiName (WikiPerson name link lwords) = name
+
+getWikiLink :: WikiPerson -> WikiLink 
+getWikiLink (WikiPerson name link lwords) = link  
+
+getWikiWords :: WikiPerson -> [LinkWord] 
+getWikiWords (WikiPerson name link lwords) = lwords    
 
 {-}
 instance FromJSON QueryRes where 
@@ -164,6 +194,27 @@ myFromString (String t) = t
 
 
 val :: Value
-val = Object $ fromList [
-  ("numbers", Array $ fromList [Number 1, Number 2, Number 3]),
-  ("boolean", Bool True) ]
+val = Object $ fromList [("numbers", Array $ fromList [Number 1, Number 2, Number 3]), ("boolean", Bool True) ]
+
+
+  -- build the resultjson 
+  -- we need : 
+  -- a List of the originalnames in the passsed order and a corresponding list of haspmaps with the wikidataids as keys and the points as values 
+
+
+buildJSON :: [(OriginalName,[(WikiLink,Points)])] -> Value  
+buildJSON info = Object $ fromList (buildL' info ) where 
+   buildL' []       = []
+   buildL' (i:is)   = let oName      = fst i 
+                          linkList   = snd i
+                          linkListWithValue = map (\(txt,pts) -> (txt,String pts)) linkList 
+                          hmlinkList = Object $ fromList $ linkListWithValue    
+                      in (oName,hmlinkList) : buildL' is     
+
+
+{-}
+
+   buildHM' []       = []
+   buildHM' (h:hs)   = let link   = fst h 
+                           points = snd h
+                       in (link,points)    -}

@@ -1,8 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-} 
+
+
 module PositionMap where 
 
 import qualified Data.Map as Map
 import Data.Maybe(fromJust,isJust)
 import SmallFunctions(average)
+import Data.Text.Internal
+import Data.String.Conversions (cs)
 {- Every word in the text should be labeled with its position. 
   The difficulty here is that many words , e.g. names, places whatever, should always be looked at as a unit.
   So   the sentence "Max Planck's place of burial is the  Stadtfriedhof Göttingen" should be partitioned like
@@ -44,14 +49,15 @@ Max
 type Pos = [Int]
 
 type SinglePos = Int 
+type NamePosition = Int 
 
 type Distance  = Int 
 
 type Distances = [Distance]
 
-type Name      = String 
+type Name      = Text 
 
-type RelatedString     = String
+type RelatedString     = Text
 type RelatedStrings    = [RelatedString]
 
 
@@ -64,21 +70,22 @@ onlyWords = words -- not yet defined
 
 -- number all words in a string
 
-numberTheString :: String -> [(String,SinglePos)]
-numberTheString str = let ws = words str 
-                      in zip ws  [0 .. ]
+numberTheString :: Text -> [(Text,SinglePos)]
+numberTheString str = let ws = words $ showText str 
+                          zipped = zip ws  [0 .. ]
+                      in map (\(w,n) -> ((cs w),n) ) zipped
 
 
 -- construct the KVs
 
 
-initPosKV :: String ->  Map.Map SinglePos String 
-initPosKV str = let newKV = (Map.empty :: Map.Map SinglePos String)
+initPosKV :: Text ->  Map.Map SinglePos Text 
+initPosKV str = let newKV = (Map.empty :: Map.Map SinglePos Text)
                     numbered = numberTheString str
                 in foldr (\(s,p) kv -> Map.insert p s kv ) newKV numbered 
 
 
-collectSameStr :: String -> [(String,Pos)]
+collectSameStr :: Text -> [(Text,Pos)]
 collectSameStr str = let numbered =  numberTheString str 
                      in  collect' numbered [] where 
                            collect' []     acc            = acc 
@@ -87,8 +94,8 @@ collectSameStr str = let numbered =  numberTheString str
                            insert' (s,p)  ((sI,ps):sss) accIns  | s == sI    = sss ++ ((s,(p:ps)) : accIns)  
                                                                 | otherwise  = insert' (s,p) sss ((sI,ps):accIns)
 
-initStrKV :: String ->  Map.Map String Pos
-initStrKV str  = let newKV = (Map.empty :: Map.Map  String Pos)
+initStrKV :: Text ->  Map.Map Text Pos
+initStrKV str  = let newKV = (Map.empty :: Map.Map  Text Pos)
                      numbered = collectSameStr str
                  in  foldr (\(s,ps) kv -> Map.insert s ps kv ) newKV numbered 
 -----------------------------------------
@@ -98,15 +105,18 @@ initStrKV str  = let newKV = (Map.empty :: Map.Map  String Pos)
 --takes a single word and looks in the Stringsortedtree if 
 -- the word is in it and returns if found the positions of the given word
 --else returns Nothing
-findWord :: String -> Map.Map String Pos ->  Maybe Pos 
-findWord  str keyM = Map.lookup str keyM 
+findWord :: Text -> Map.Map Text Pos ->   Pos 
+findWord  str keyM = let ps = Map.lookup str keyM
+                     in case ps of 
+                                   Nothing        -> []
+                                   (Just x)       -> x 
 
 
 
 -- gets a position and returns the word at its position in the text if its exists
 -- otherwise returns nothing
 -- expects a positive number 
-findWordAtPos :: SinglePos -> Map.Map SinglePos String -> Maybe String 
+findWordAtPos :: SinglePos -> Map.Map SinglePos Text -> Maybe Text 
 findWordAtPos pos keyM = Map.lookup pos keyM
 
 
@@ -115,7 +125,8 @@ findWordAtPos pos keyM = Map.lookup pos keyM
 -- so we need to combine our findword functons here
 -- and the output is a positionlist of where to find the input string
 -- empty lsit means the string is not in the text
-findString :: String -> Map.Map String Pos -> Map.Map SinglePos String ->  Pos 
+{-
+findString :: String  -> Map.Map Text Pos -> Map.Map SinglePos Text ->  Pos 
 findString strF stStr stPs 
   = let toFind     = onlyWords strF  -- function
         firstWord  = head toFind     
@@ -128,6 +139,7 @@ findString strF stStr stPs
           find' (w:ws) accPs cnt = let wPs = filter (\p -> isJust(findWordAtPos (p+cnt) stPs) && (w == fromJust(findWordAtPos (p+cnt) stPs)) ) accPs  
                                    in  find' ws wPs (cnt+1)    
 
+-}
 
 
 -- distance functions
@@ -145,14 +157,23 @@ distance2 pos1 pos2 = abs (pos1 - pos2)
 distancePosLists :: Pos -> Pos -> Distances 
 distancePosLists ps1 ps2 = [distance2] <*> ps1 <*> ps2  
 
-
-
 -- computes the distances between the given name and a given string, which may be related to the name
-distancesBetweenWordNName :: Name -> RelatedString ->  Map.Map String Pos -> Map.Map SinglePos String -> Distances 
+distancesBetweenWordNName :: NamePosition -> RelatedString ->  Map.Map Text Pos -> Distances 
+distancesBetweenWordNName nameP word strTree         = let psWord    = findWord word strTree  -- positions of the given word
+                                                           distances = distancePosLists [nameP] psWord 
+                                                       in distances
+
+                               
+
+
+{-
+-- computes the distances between the given name and a given string, which may be related to the name
+distancesBetweenWordNName :: Name -> RelatedString ->  Map.Map Text Pos -> Map.Map SinglePos Text -> Distances 
 distancesBetweenWordNName name word strTree posTree = let psWord    = findString word strTree posTree -- positions of the given word
                                                           psName    = findString name strTree posTree --positions of the given name
                                                           distances = distancePosLists psName psWord 
                                                       in distances 
 
-distancesBetweenWordsNName :: Name -> RelatedStrings -> Map.Map String Pos -> Map.Map SinglePos String -> [(RelatedString,Distances)]
-distancesBetweenWordsNName name strings stringKM posKM =  foldr (\str acc -> (str,(distancesBetweenWordNName name str stringKM posKM)) : acc ) [] strings
+-}
+distancesBetweenWordsNName :: NamePosition -> RelatedStrings -> Map.Map Text Pos ->  [(RelatedString,Distances)]
+distancesBetweenWordsNName nameP strings stringKM  =  foldr (\str acc -> (str,(distancesBetweenWordNName nameP str stringKM )) : acc ) [] strings
