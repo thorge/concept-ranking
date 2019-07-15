@@ -413,7 +413,7 @@ $ cabal install aeson
 ```
 
 
-Take The QueryResult and compute the Rankings
+Take The QueryResult and compute the Rankings and 
 Go into the RankNLink directory
 
 ```bash
