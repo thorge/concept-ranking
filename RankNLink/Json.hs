@@ -11,6 +11,7 @@ import Data.Maybe(fromJust )
 import Data.Text.Internal
 import qualified Data.Vector as V   
 import Data.String.Conversions (cs)
+import Data.Scientific 
 
 type OriginalName = String 
 
@@ -218,7 +219,7 @@ buildJSON info = Object $ fromList (buildL' info 0) where
    buildL' []  _    = []
    buildL' (i:is) n = let oName      = fst i 
                           linkList   = snd i
-                          linkListWithValue = map (\(link,pts) -> ( (cs link) ,String (cs pts))) linkList 
+                          linkListWithValue = map (\(link,pts) -> ( (cs link) ,Number (read  pts :: Scientific))) linkList 
                           hmlinkList = Object $ fromList $ linkListWithValue    
                           linkListHash = Object $ fromList [(cs oName,hmlinkList)]
                       in ( (cs $ show n) ,linkListHash) : buildL' is (n+1)

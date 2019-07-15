@@ -36,6 +36,8 @@ type Occurence = Int
 
 type Occurs = (OriginalName -> Int)
 
+
+
 initOccurs :: Occurs 
 initOccurs = \oname -> 1
 -- type Points = Float 
@@ -55,22 +57,31 @@ numberOriginalNames ps = number' ps initOccurs where
                         in newP : number' ps newOcc
 
 
+zipWithOccurence :: Eq a => [a] -> [(a,Int)]
+zipWithOccurence as = zip' (\x -> 0) as where 
+  zip' f []       = []
+  zip' f (a:as)   = let n      = f a 
+                        newF   = \x -> if x == a then ((f a) + 1) else f a 
+                    in (a,n) : zip' newF as 
+
 computePoints :: QueryRes ->  [(OriginalName,[(WikiLink,Points)])] 
 computePoints qRes = let inputTxt   = getTxt qRes 
                          nameList   =  getPersons qRes 
-                         -- renamed    =   numberOriginalNames nameList 
+                         numbered   =   zipWithOccurence nameList 
                          stringTree = initStrKV inputTxt 
                          posTree    = initPosKV inputTxt -- unneccessary 
-                     in concatMap (computeOne stringTree posTree) nameList
+                     in map(computeOne stringTree posTree) numbered 
 
 
-computeOne ::   Map.Map String Pos ->  Map.Map SinglePos String -> PersonInText -> [(OriginalName,[(WikiLink,Points)])]
-computeOne strT posTr person  = let oName           = getOriginalName person 
-                                    positions       = findString oName strT posTr
-                                    wikiPersonList  =  getWikiPersons person 
-                                    rankings = map (\p -> map (getRanking strT p) wikiPersonList)  positions
-                                    zipped  = map (\r -> (oName,r)) rankings   
-                                in zipped 
+computeOne ::   Map.Map String Pos ->  Map.Map SinglePos String -> (PersonInText,Int) -> (OriginalName,[(WikiLink,Points)])
+computeOne strT posTr personInt  = let oName           = getOriginalName $ fst personInt  
+                                       positions       = findString oName strT posTr
+                                       occurence       = snd personInt 
+                                       singlePos       = positions !! occurence 
+                                       wikiPersonList  =  getWikiPersons $ fst personInt  
+                                       ranking = map (getRanking strT singlePos) wikiPersonList
+                                       zipped  = (oName,ranking)   
+                                   in zipped 
 
 getRanking :: Map.Map String Pos -> SinglePos ->  WikiPerson -> (WikiLink,Points)
 getRanking strTr pos person  = let linkedWords = getWikiWords person 
