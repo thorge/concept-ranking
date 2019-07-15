@@ -41,6 +41,9 @@ data PersonInText = PersonInText   OriginalName [WikiPerson]
 getOriginalName :: PersonInText -> OriginalName 
 getOriginalName (PersonInText oname wL) = oname 
 
+setOriginalName :: String -> PersonInText -> PersonInText 
+setOriginalName str (PersonInText oname wL) = (PersonInText str wL)
+
 getWikiPersons :: PersonInText -> [WikiPerson]
 getWikiPersons (PersonInText oname wList) = wList  
 
@@ -210,14 +213,15 @@ val = Object $ fromList [("numbers", Array $ fromList [Number 1, Number 2, Numbe
 
 
 buildJSON :: [(OriginalName,[(WikiLink,Points)])] -> Value  
-buildJSON info = Object $ fromList (buildL' info ) where 
-   buildL' :: [(OriginalName,[(WikiLink,Points)])] -> [(Text,Value)]
-   buildL' []       = []
-   buildL' (i:is)   = let oName      = fst i 
+buildJSON info = Object $ fromList (buildL' info 0) where 
+   buildL' :: [(OriginalName,[(WikiLink,Points)])] -> Int -> [(Text,Value)]
+   buildL' []  _    = []
+   buildL' (i:is) n = let oName      = fst i 
                           linkList   = snd i
                           linkListWithValue = map (\(link,pts) -> ( (cs link) ,String (cs pts))) linkList 
                           hmlinkList = Object $ fromList $ linkListWithValue    
-                      in ( (cs oName) ,hmlinkList) : buildL' is 
+                          linkListHash = Object $ fromList [(cs oName,hmlinkList)]
+                      in ( (cs $ show n) ,linkListHash) : buildL' is (n+1)
 
 
 jsonValueToJSONString :: Value -> L.ByteString 

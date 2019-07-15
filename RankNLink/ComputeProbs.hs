@@ -32,12 +32,33 @@ type PropsValues = [(Prop,PropValue)]
 
 type MetaWord = String 
 
+type Occurence = Int 
+
+type Occurs = (OriginalName -> Int)
+
+initOccurs :: Occurs 
+initOccurs = \oname -> 1
 -- type Points = Float 
+
+
+-- compute for every found name in the text itr rankings 
+
+numberOriginalNames  :: [PersonInText] -> [PersonInText]
+numberOriginalNames ps = number' ps initOccurs where 
+  number' [] _        = []
+  number' (p:ps) occ  = let oname   = getOriginalName p 
+                            occurs  = occ oname 
+                            newName =  (show occurs) ++ ". " ++ oname
+                            newP    = setOriginalName newName p 
+                            newOcc  = \o -> if o == oname then ((occ o) + 1) 
+                                                          else occ o 
+                        in newP : number' ps newOcc
 
 
 computePoints :: QueryRes ->  [(OriginalName,[(WikiLink,Points)])] 
 computePoints qRes = let inputTxt   = getTxt qRes 
-                         nameList   =   getPersons qRes 
+                         nameList   =  getPersons qRes 
+                         -- renamed    =   numberOriginalNames nameList 
                          stringTree = initStrKV inputTxt 
                          posTree    = initPosKV inputTxt -- unneccessary 
                      in concatMap (computeOne stringTree posTree) nameList
@@ -46,7 +67,7 @@ computePoints qRes = let inputTxt   = getTxt qRes
 computeOne ::   Map.Map String Pos ->  Map.Map SinglePos String -> PersonInText -> [(OriginalName,[(WikiLink,Points)])]
 computeOne strT posTr person  = let oName           = getOriginalName person 
                                     positions       = findString oName strT posTr
-                                    wikiPersonList  = nub $ getWikiPersons person 
+                                    wikiPersonList  =  getWikiPersons person 
                                     rankings = map (\p -> map (getRanking strT p) wikiPersonList)  positions
                                     zipped  = map (\r -> (oName,r)) rankings   
                                 in zipped 
@@ -56,7 +77,8 @@ getRanking strTr pos person  = let linkedWords = getWikiWords person
                                    wikiLink    = getWikiLink person 
                                    wikiName    = getWikiName person
                                    points      = foldr (\lWord acc -> (pointsfor1Word lWord pos strTr) + acc) 0 linkedWords 
-                               in (wikiLink,cs $ show points) 
+                                   linkNName   = wikiName ++ " : " ++ wikiLink
+                               in (linkNName, cs $ show points) 
 
 
 pointsfor1Word :: String -> SinglePos -> Map.Map String Pos -> Float 
