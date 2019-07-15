@@ -213,15 +213,17 @@ val = Object $ fromList [("numbers", Array $ fromList [Number 1, Number 2, Numbe
   -- a List of the originalnames in the passsed order and a corresponding list of haspmaps with the wikidataids as keys and the points as values 
 
 
-buildJSON :: [(OriginalName,[(WikiLink,Points)])] -> Value  
+buildJSON :: [(OriginalName,[(WikiName,WikiLink,Points)])] -> Value  
 buildJSON info = Object $ fromList (buildL' info 0) where 
-   buildL' :: [(OriginalName,[(WikiLink,Points)])] -> Int -> [(Text,Value)]
+   buildL' :: [(OriginalName,[(WikiName,WikiLink,Points)])] -> Int -> [(Text,Value)]
    buildL' []  _    = []
    buildL' (i:is) n = let oName      = fst i 
                           linkList   = snd i
-                          linkListWithValue = map (\(link,pts) -> ( (cs link) ,Number (read  pts :: Scientific))) linkList 
-                          hmlinkList = Object $ fromList $ linkListWithValue    
-                          linkListHash = Object $ fromList [(cs oName,hmlinkList)]
+                          --linkListWithValue = map (\(name,link,pts) -> Object $ fromList [((cs name), Array $ fromList [(String (cs link)) , (Number (read  pts :: Scientific))])] ) linkList
+                          linkListWithValue = map (\(name,link,pts) -> Object $ fromList $ reverse [("name",(String (cs name))), ("link", (String (cs link)) ),("points",Number (read  pts :: Scientific))]) linkList
+                          --hmlinkList = Object $ fromList $ linkListWithValue  
+                          array = Array $ fromList linkListWithValue
+                          linkListHash = Object $ fromList [(cs oName,array)]
                       in ( (cs $ show n) ,linkListHash) : buildL' is (n+1)
 
 
