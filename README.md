@@ -421,5 +421,14 @@ Go into the RankNLink directory
 $ /.Main "path/to/the/queryresult/file.json" "/path/to/the/outputdirectory/file.json" 
 
 ```
+Example 
+```bash
+
+./Main "result.json" "resultComputation.json"
+
+```
+
+
+
 
 
