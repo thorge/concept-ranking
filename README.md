@@ -395,8 +395,31 @@ cd backend && npm install && npm run start
 
 Then you can retrieve data like this: http://localhost:8081/api/retrieve/Max%20Planck
 
-### 4. Context Comparison
-TODO
+### 4. Context Comparison AND Ranking
 
-### Ranking
-TODO
+Install the haskell-platform (ghci and cabal) 
+```bash
+$ sudo apt-get install haskell-platform
+```
+
+Install the needed haskell-libraries
+
+```bash
+$ cabal install string-conversions
+$ cabal install text 
+$ cabal install aeson
+
+
+```
+
+
+Take The QueryResult and compute the Rankings
+Go into the RankNLink directory
+
+```bash
+
+$ /.Main "path/to/the/queryresult/file.json" "/path/to/the/outputdirectory/file.json" 
+
+```
+
+
