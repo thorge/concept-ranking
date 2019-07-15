@@ -8,7 +8,7 @@ import Data.Maybe(fromJust,isJust)
 import SmallFunctions(average)
 import Data.Text.Internal
 import Data.String.Conversions (cs)
-{- Every word in the text should be labeled with its position. 
+{- Every word in the String should be labeled with its position. 
   The difficulty here is that many words , e.g. names, places whatever, should always be looked at as a unit.
   So   the sentence "Max Planck's place of burial is the  Stadtfriedhof Göttingen" should be partitioned like
 "(Max Planck,0) (place of burial,1) (is,2) (the,3) (Stadtfriedhof Göttingen,4)". Another difficulty is here to detect Max Planck's as Max Planck or that maybe words like
@@ -20,9 +20,9 @@ position of the first word of the first argument of the tupel.
 
 ---------------------------------------------------
 
-Structure the text
+Structure the String
 
-Because we will have to go many times through the text we should pack it in a  datastructure in which we can easily search for certain names.
+Because we will have to go many times through the String we should pack it in a  datastructure in which we can easily search for certain names.
 Yes, i am talking about searchtrees.
 
 
@@ -32,10 +32,10 @@ and hope that it is kinda balanced.
 The second tree is sorted by the postion of the words.
 
 That 2-Tree-Structure  gonna be  rly useful when we are seacrhing for certain word combinations like "Stadtfriedhof Göttingen". Then we can check in the first tree if the word "Stadtfriedhof"
-is in the text in logarithmic searchtime (balanced SearchTree). Afterwards we have all positions where the word "Stadtfriedhof" appears. For example (Stadtfriedhof,[7,57,163]). Now we have to look up if at position 8,58,164
+is in the String in logarithmic searchtime (balanced SearchTree). Afterwards we have all positions where the word "Stadtfriedhof" appears. For example (Stadtfriedhof,[7,57,163]). Now we have to look up if at position 8,58,164
 the word "göttingen" stands. Therefore we can easily search in our second tree. Again per search in logarithmic time. This way to search is rly efficient in the way that we have to search for words/phrases from our metadata
-we get from our person name.For example again if we have found "max planck" in our text we get lots of linked information(words,phrases) , e.g. place of birth, from the wikidata article. And if we wanna check if those words/phrases
-appear in our text, we can use this 2 tree-search to check whether the word/phrase is or is not in the text. Additionally we get the relative distance of the phrases and the names, which is needed for our rankings.
+we get from our person name.For example again if we have found "max planck" in our String we get lots of linked information(words,phrases) , e.g. place of birth, from the wikidata article. And if we wanna check if those words/phrases
+appear in our String, we can use this 2 tree-search to check whether the word/phrase is or is not in the String. Additionally we get the relative distance of the phrases and the names, which is needed for our rankings.
 
 
 
@@ -55,9 +55,9 @@ type Distance  = Int
 
 type Distances = [Distance]
 
-type Name      = Text 
+type Name      = String 
 
-type RelatedString     = Text
+type RelatedString     = String
 type RelatedStrings    = [RelatedString]
 
 
@@ -70,22 +70,22 @@ onlyWords = words -- not yet defined
 
 -- number all words in a string
 
-numberTheString :: Text -> [(Text,SinglePos)]
-numberTheString str = let ws = words $ showText str 
+numberTheString :: String -> [(String,SinglePos)]
+numberTheString str = let ws = words  str 
                           zipped = zip ws  [0 .. ]
-                      in map (\(w,n) -> ((cs w),n) ) zipped
+                      in zipped -- map (\(w,n) -> ((cs w),n) ) zipped
 
 
 -- construct the KVs
 
 
-initPosKV :: Text ->  Map.Map SinglePos Text 
-initPosKV str = let newKV = (Map.empty :: Map.Map SinglePos Text)
+initPosKV :: String ->  Map.Map SinglePos String 
+initPosKV str = let newKV = (Map.empty :: Map.Map SinglePos String)
                     numbered = numberTheString str
                 in foldr (\(s,p) kv -> Map.insert p s kv ) newKV numbered 
 
 
-collectSameStr :: Text -> [(Text,Pos)]
+collectSameStr :: String -> [(String,Pos)]
 collectSameStr str = let numbered =  numberTheString str 
                      in  collect' numbered [] where 
                            collect' []     acc            = acc 
@@ -94,8 +94,8 @@ collectSameStr str = let numbered =  numberTheString str
                            insert' (s,p)  ((sI,ps):sss) accIns  | s == sI    = sss ++ ((s,(p:ps)) : accIns)  
                                                                 | otherwise  = insert' (s,p) sss ((sI,ps):accIns)
 
-initStrKV :: Text ->  Map.Map Text Pos
-initStrKV str  = let newKV = (Map.empty :: Map.Map  Text Pos)
+initStrKV :: String ->  Map.Map String Pos
+initStrKV str  = let newKV = (Map.empty :: Map.Map  String Pos)
                      numbered = collectSameStr str
                  in  foldr (\(s,ps) kv -> Map.insert s ps kv ) newKV numbered 
 -----------------------------------------
@@ -105,7 +105,7 @@ initStrKV str  = let newKV = (Map.empty :: Map.Map  Text Pos)
 --takes a single word and looks in the Stringsortedtree if 
 -- the word is in it and returns if found the positions of the given word
 --else returns Nothing
-findWord :: Text -> Map.Map Text Pos ->   Pos 
+findWord :: String -> Map.Map String Pos ->   Pos 
 findWord  str keyM = let ps = Map.lookup str keyM
                      in case ps of 
                                    Nothing        -> []
@@ -113,33 +113,33 @@ findWord  str keyM = let ps = Map.lookup str keyM
 
 
 
--- gets a position and returns the word at its position in the text if its exists
+-- gets a position and returns the word at its position in the String if its exists
 -- otherwise returns nothing
 -- expects a positive number 
-findWordAtPos :: SinglePos -> Map.Map SinglePos Text -> Maybe Text 
+findWordAtPos :: SinglePos -> Map.Map SinglePos String -> Maybe String 
 findWordAtPos pos keyM = Map.lookup pos keyM
 
 
 
--- in general we try to find a string in the text, which can be 1,2,3 .. words
+-- in general we try to find a string in the String, which can be 1,2,3 .. words
 -- so we need to combine our findword functons here
 -- and the output is a positionlist of where to find the input string
--- empty lsit means the string is not in the text
-{-
-findString :: String  -> Map.Map Text Pos -> Map.Map SinglePos Text ->  Pos 
+-- empty lsit means the string is not in the String
+
+findString :: String  -> Map.Map String Pos -> Map.Map SinglePos String ->  Pos 
 findString strF stStr stPs 
   = let toFind     = onlyWords strF  -- function
         firstWord  = head toFind     
         firstPos   = findWord firstWord stStr 
         restWords  = tail toFind 
     in  case firstPos of 
-         Nothing -> []
-         Just ps -> find' restWords ps 1 where 
-          find' [] accPs cnt     = accPs 
-          find' (w:ws) accPs cnt = let wPs = filter (\p -> isJust(findWordAtPos (p+cnt) stPs) && (w == fromJust(findWordAtPos (p+cnt) stPs)) ) accPs  
-                                   in  find' ws wPs (cnt+1)    
+          [] -> []
+          ps  -> find' restWords ps 1 where 
+            find' [] accPs cnt     = accPs 
+            find' (w:ws) accPs cnt = let wPs = filter (\p -> isJust(findWordAtPos (p+cnt) stPs) && (w == fromJust(findWordAtPos (p+cnt) stPs)) ) accPs  
+                                     in  find' ws wPs (cnt+1)    
 
--}
+
 
 
 -- distance functions
@@ -158,7 +158,7 @@ distancePosLists :: Pos -> Pos -> Distances
 distancePosLists ps1 ps2 = [distance2] <*> ps1 <*> ps2  
 
 -- computes the distances between the given name and a given string, which may be related to the name
-distancesBetweenWordNName :: NamePosition -> RelatedString ->  Map.Map Text Pos -> Distances 
+distancesBetweenWordNName :: NamePosition -> RelatedString ->  Map.Map String Pos -> Distances 
 distancesBetweenWordNName nameP word strTree         = let psWord    = findWord word strTree  -- positions of the given word
                                                            distances = distancePosLists [nameP] psWord 
                                                        in distances
@@ -168,12 +168,12 @@ distancesBetweenWordNName nameP word strTree         = let psWord    = findWord 
 
 {-
 -- computes the distances between the given name and a given string, which may be related to the name
-distancesBetweenWordNName :: Name -> RelatedString ->  Map.Map Text Pos -> Map.Map SinglePos Text -> Distances 
+distancesBetweenWordNName :: Name -> RelatedString ->  Map.Map String Pos -> Map.Map SinglePos String -> Distances 
 distancesBetweenWordNName name word strTree posTree = let psWord    = findString word strTree posTree -- positions of the given word
                                                           psName    = findString name strTree posTree --positions of the given name
                                                           distances = distancePosLists psName psWord 
                                                       in distances 
 
 -}
-distancesBetweenWordsNName :: NamePosition -> RelatedStrings -> Map.Map Text Pos ->  [(RelatedString,Distances)]
+distancesBetweenWordsNName :: NamePosition -> RelatedStrings -> Map.Map String Pos ->  [(RelatedString,Distances)]
 distancesBetweenWordsNName nameP strings stringKM  =  foldr (\str acc -> (str,(distancesBetweenWordNName nameP str stringKM )) : acc ) [] strings

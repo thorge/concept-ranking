@@ -40,18 +40,18 @@ computePoints qRes = let inputTxt   = getTxt qRes
                          nameList   =   getPersons qRes 
                          stringTree = initStrKV inputTxt 
                          posTree    = initPosKV inputTxt -- unneccessary 
-                     in concatMap (computeOne stringTree) nameList
+                     in concatMap (computeOne stringTree posTree) nameList
 
 
-computeOne ::   Map.Map Text Pos -> PersonInText -> [(OriginalName,[(WikiLink,Points)])]
-computeOne strT person  = let oName           = getOriginalName person 
-                              positions       = findWord oName strT 
-                              wikiPersonList  = nub $ getWikiPersons person 
-                              rankings = map (\p -> map (getRanking strT p) wikiPersonList)  positions
-                              zipped  = map (\r -> (oName,r)) rankings   
-                          in zipped 
+computeOne ::   Map.Map String Pos ->  Map.Map SinglePos String -> PersonInText -> [(OriginalName,[(WikiLink,Points)])]
+computeOne strT posTr person  = let oName           = getOriginalName person 
+                                    positions       = findString oName strT posTr
+                                    wikiPersonList  = nub $ getWikiPersons person 
+                                    rankings = map (\p -> map (getRanking strT p) wikiPersonList)  positions
+                                    zipped  = map (\r -> (oName,r)) rankings   
+                                in zipped 
 
-getRanking :: Map.Map Text Pos -> SinglePos ->  WikiPerson -> (WikiLink,Points)
+getRanking :: Map.Map String Pos -> SinglePos ->  WikiPerson -> (WikiLink,Points)
 getRanking strTr pos person  = let linkedWords = getWikiWords person 
                                    wikiLink    = getWikiLink person 
                                    wikiName    = getWikiName person
@@ -59,17 +59,20 @@ getRanking strTr pos person  = let linkedWords = getWikiWords person
                                in (wikiLink,cs $ show points) 
 
 
-pointsfor1Word :: Text -> SinglePos -> Map.Map Text Pos -> Float 
+pointsfor1Word :: String -> SinglePos -> Map.Map String Pos -> Float 
 pointsfor1Word linkWord namePos strTr  = let linkWordPs = findWord   linkWord strTr 
                                              distances  =  map (distance2 namePos) linkWordPs
-                                             mini = minimum distances 
-                                             med  = median $ sort distances
-                                         in comp' mini med where 
-                                              comp' mini1 medi1 = let min1   = fromInteger $ toInteger mini1
-                                                                      med1   = fromInteger $ toInteger medi1
-                                                                      points = 1.0 - (0.5* (min1**2) / 10000.0  + 0.5 * (med1**2) / 10000.0)
-                                                                    in if (points > 0) then points
-                                                                                   else 0 
+                                         in case distances of 
+                                                              [] -> 0
+                                                              _  -> comp' (minimum distances) (median $ sort distances) where 
+                                                                      comp' mini1 medi1 = let min1   = fromInteger $ toInteger mini1
+                                                                                              med1   = fromInteger $ toInteger medi1
+                                                                                              points = 1.0 - (0.5* (min1**2) / 10000.0  + 0.5 * (med1**2) / 10000.0)
+                                                                                           in if (points > 0) then points
+                                                                                                              else 0 
+
+
+                                            
   
 
 {-

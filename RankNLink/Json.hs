@@ -10,23 +10,24 @@ import Data.Aeson.Types
 import Data.Maybe(fromJust )
 import Data.Text.Internal
 import qualified Data.Vector as V   
+import Data.String.Conversions (cs)
 
-type OriginalName = Text 
+type OriginalName = String 
 
-type WikiName     = Text 
+type WikiName     = String 
 
-type WikiLink     = Text 
+type WikiLink     = String 
 
-type LinkWord     = Text 
-
-
-type Points = Text 
+type LinkWord     = String 
 
 
-data QueryRes     = QueryRes Text [PersonInText]
+type Points = String 
+
+
+data QueryRes     = QueryRes String [PersonInText]
  deriving (Show,Eq) 
 
-getTxt :: QueryRes -> Text 
+getTxt :: QueryRes -> String 
 getTxt (QueryRes t ps) = t 
 
 getPersons :: QueryRes -> [PersonInText]
@@ -108,7 +109,7 @@ try = do f        <- L.readFile "result.json"
          let v = fromJust withJust
          return ( (parseJSON :: Value -> Parser QueryRes)  v) 
 
--}
+
 try2 :: IO (Maybe Value  )
 try2 = do f        <- L.readFile "result.json"
           return (decode f :: Maybe Value)
@@ -130,7 +131,7 @@ try5 i = do f        <- L.readFile "result.json"
             let  (Just v) = (decode f :: Maybe Value)
             let o = (getObject v )
             return $ (HM.toList o) !! i 
-
+-}
 
 -- type Object = HashMap Text Value
 
@@ -145,18 +146,24 @@ data PersonInText = PersonInText  [WikiPerson] OriginalName
 
 data WikiPerson   = WikiPerson [LinkWord] WikiLink WikiName
 
- -}
+ 
 
 getIt :: IO QueryRes 
 getIt = do (Just v) <- try2
            return $ queryToQueryRes v   
+
+-}
+readAndBuildValue :: FilePath -> IO (Maybe Value) 
+readAndBuildValue filepath = do bStr <- L.readFile filepath 
+                                return $ decode bStr 
+
 
 queryToQueryRes :: Value -> QueryRes
 queryToQueryRes obj = let o                                = getObject obj 
                           (Just (String inputText) )       = HM.lookup "text"  o 
                           (Just nameArray)                 = HM.lookup "names" o
                           personList                       = getPersonsInTextFromArray nameArray 
-                      in (QueryRes inputText personList)
+                      in (QueryRes (cs inputText) personList)
 
 
 {-
@@ -172,7 +179,7 @@ getPersonsInTextFromArray (Array a)    = elemsToPIT (V.toList a) where
 getPersonInText :: HM.HashMap Text Value -> PersonInText 
 getPersonInText hm = let (Just (String name)) = HM.lookup "original" hm 
                          (Just resultArray)   = HM.lookup "results"  hm
-                     in (PersonInText name (resultArrayToWikiPersonList resultArray))
+                     in (PersonInText (cs name) (resultArrayToWikiPersonList resultArray))
 
 
 resultArrayToWikiPersonList ::  Value -> [WikiPerson] 
@@ -187,8 +194,8 @@ getWikiPersonFromHashmapObject (Object hm) = let label  = myFromString $ fromJus
                                                  textList   = map myFromString valueList 
                                              in (WikiPerson label item textList) 
 
-myFromString :: Value -> Text 
-myFromString (String t) = t 
+myFromString :: Value -> String 
+myFromString (String t) = cs t 
          
 
 
@@ -204,12 +211,17 @@ val = Object $ fromList [("numbers", Array $ fromList [Number 1, Number 2, Numbe
 
 buildJSON :: [(OriginalName,[(WikiLink,Points)])] -> Value  
 buildJSON info = Object $ fromList (buildL' info ) where 
+   buildL' :: [(OriginalName,[(WikiLink,Points)])] -> [(Text,Value)]
    buildL' []       = []
    buildL' (i:is)   = let oName      = fst i 
                           linkList   = snd i
-                          linkListWithValue = map (\(txt,pts) -> (txt,String pts)) linkList 
+                          linkListWithValue = map (\(link,pts) -> ( (cs link) ,String (cs pts))) linkList 
                           hmlinkList = Object $ fromList $ linkListWithValue    
-                      in (oName,hmlinkList) : buildL' is     
+                      in ( (cs oName) ,hmlinkList) : buildL' is 
+
+
+jsonValueToJSONString :: Value -> L.ByteString 
+jsonValueToJSONString  = encode     
 
 
 {-}
